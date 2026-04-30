@@ -50,10 +50,20 @@ $idempotentCodes = [
     '1091', // Can't DROP, check it exists
     '1826', // Duplicate foreign key constraint name
 ];
-function isIdempotent(\Throwable $e, array $codes): bool {
+// InnoDB-specifieke patronen voor FK-naam collisions die niet altijd een
+// nette SQLSTATE-code opleveren:
+$idempotentPatterns = [
+    'errno: 121',                         // duplicate FK / unique key on write
+    'Duplicate key on write or update',
+    'Duplicate foreign key constraint',
+];
+function isIdempotent(\Throwable $e, array $codes, array $patterns): bool {
     $msg = $e->getMessage();
     foreach ($codes as $c) {
         if (str_contains($msg, $c)) return true;
+    }
+    foreach ($patterns as $p) {
+        if (str_contains($msg, $p)) return true;
     }
     return false;
 }
@@ -81,7 +91,7 @@ foreach ($files as $file) {
         try {
             $pdo->exec($stmt);
         } catch (\Throwable $e) {
-            if (isIdempotent($e, $idempotentCodes)) {
+            if (isIdempotent($e, $idempotentCodes, $idempotentPatterns)) {
                 $skipped++;
                 echo "  ~ skipped (al toegepast): " . substr(preg_replace('/\s+/', ' ', $stmt), 0, 80) . "\n";
                 continue;

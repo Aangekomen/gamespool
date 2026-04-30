@@ -82,6 +82,9 @@ class Achievements
      */
     public static function nemesis(int $userId): ?array
     {
+        // MySQL staat in HAVING geen vergelijking tussen twee aggregate-aliasen
+        // toe (1247: reference to group function) — daarom de expressies
+        // herhalen in HAVING en ORDER BY.
         $rows = Database::fetchAll(
             "SELECT opp.user_id AS opp_id, u.display_name, u.avatar_path,
                     SUM(CASE WHEN opp.result = 'win'  THEN 1 ELSE 0 END) AS their_wins,
@@ -97,9 +100,12 @@ class Achievements
                 AND m.ended_at >= (NOW() - INTERVAL 90 DAY)
                 AND (SELECT COUNT(*) FROM match_participants pc WHERE pc.match_id = m.id) = 2
               GROUP BY opp.user_id, u.display_name, u.avatar_path
-             HAVING matches >= 3
-                AND their_wins > your_wins
-              ORDER BY (their_wins - your_wins) DESC, their_wins DESC
+             HAVING COUNT(*) >= 3
+                AND SUM(CASE WHEN opp.result = 'win' THEN 1 ELSE 0 END)
+                  > SUM(CASE WHEN me.result  = 'win' THEN 1 ELSE 0 END)
+              ORDER BY (SUM(CASE WHEN opp.result = 'win' THEN 1 ELSE 0 END)
+                      - SUM(CASE WHEN me.result  = 'win' THEN 1 ELSE 0 END)) DESC,
+                       SUM(CASE WHEN opp.result = 'win' THEN 1 ELSE 0 END) DESC
               LIMIT 1",
             [$userId]
         );
@@ -127,9 +133,12 @@ class Achievements
                 AND m.ended_at >= (NOW() - INTERVAL 90 DAY)
                 AND (SELECT COUNT(*) FROM match_participants pc WHERE pc.match_id = m.id) = 2
               GROUP BY opp.user_id, u.display_name, u.avatar_path
-             HAVING matches >= 3
-                AND your_wins > their_wins
-              ORDER BY (your_wins - their_wins) DESC, your_wins DESC
+             HAVING COUNT(*) >= 3
+                AND SUM(CASE WHEN me.result  = 'win' THEN 1 ELSE 0 END)
+                  > SUM(CASE WHEN opp.result = 'win' THEN 1 ELSE 0 END)
+              ORDER BY (SUM(CASE WHEN me.result  = 'win' THEN 1 ELSE 0 END)
+                      - SUM(CASE WHEN opp.result = 'win' THEN 1 ELSE 0 END)) DESC,
+                       SUM(CASE WHEN me.result  = 'win' THEN 1 ELSE 0 END) DESC
               LIMIT 1",
             [$userId]
         );

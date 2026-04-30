@@ -33,30 +33,29 @@ $title = 'GamesPool';
         return $days[date('l')] . ', ' . date('j ') . $months[date('M')];
     })();
 ?>
-    <!-- Greeting -->
+    <!-- Hero stat card met begroeting -->
     <?php $me = user(); ?>
-    <a href="<?= e(url('/profile')) ?>" class="mb-4 flex items-center gap-3 group">
-        <span class="w-12 h-12 rounded-full bg-brand-light text-brand-dark flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden ring-2 ring-white/20 group-hover:ring-brand/40 transition">
-            <?php if (!empty($me['avatar_path'])): ?>
-                <img src="<?= e(url('/uploads/avatars/' . $me['avatar_path'])) ?>" alt="<?= e($name) ?>" class="w-full h-full object-cover">
-            <?php else: ?>
-                <?= e(strtoupper(mb_substr((string) $name, 0, 1))) ?>
-            <?php endif; ?>
-        </span>
-        <div class="min-w-0">
-            <p class="text-slate-500 dark:text-slate-400 text-sm"><?= e($greet) ?>, <span class="inline-block">👋</span></p>
-            <h1 class="text-2xl font-bold text-navy dark:text-slate-100 truncate"><?= e($name) ?></h1>
-        </div>
-    </a>
-
-    <!-- Hero stat card -->
     <div class="rounded-2xl bg-navy text-white p-5 shadow-card mb-4 relative overflow-hidden">
         <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-brand/10 pointer-events-none"></div>
-        <div class="flex items-baseline justify-between relative">
-            <h2 class="text-lg font-bold">Vandaag</h2>
-            <span class="text-xs text-white/60"><?= e($dateNl) ?></span>
+
+        <div class="flex items-start justify-between gap-3 relative">
+            <a href="<?= e(url('/profile')) ?>" class="flex items-center gap-3 min-w-0 group">
+                <span class="w-12 h-12 rounded-full bg-white/15 flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden ring-2 ring-white/20 group-hover:ring-brand transition">
+                    <?php if (!empty($me['avatar_path'])): ?>
+                        <img src="<?= e(url('/uploads/avatars/' . $me['avatar_path'])) ?>" alt="<?= e($name) ?>" class="w-full h-full object-cover">
+                    <?php else: ?>
+                        <?= e(strtoupper(mb_substr((string) $name, 0, 1))) ?>
+                    <?php endif; ?>
+                </span>
+                <div class="min-w-0">
+                    <p class="text-xs text-white/60"><?= e($greet) ?>, <span class="inline-block">👋</span></p>
+                    <h1 class="text-lg font-bold truncate"><?= e($name) ?></h1>
+                </div>
+            </a>
+            <span class="text-xs text-white/60 shrink-0 mt-1"><?= e($dateNl) ?></span>
         </div>
-        <p class="text-white/70 text-sm mt-0.5">Speel een potje. Klim in de ranglijst.</p>
+
+        <p class="text-white/70 text-sm mt-3">Speel een potje. Klim in de ranglijst.</p>
 
         <div class="grid grid-cols-3 gap-1 sm:gap-3 mt-5 relative">
             <?php
