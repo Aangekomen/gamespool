@@ -36,7 +36,7 @@ class AdminController
         Admin::require();
         $users = Database::fetchAll(
             'SELECT u.id, u.email, u.display_name, u.first_name, u.last_name,
-                    u.is_admin, u.created_at, c.name AS company_name,
+                    u.avatar_path, u.is_admin, u.created_at, c.name AS company_name,
                     (SELECT COUNT(*) FROM match_participants p
                        JOIN matches m ON m.id = p.match_id
                       WHERE p.user_id = u.id AND m.state = "completed") AS matches_played

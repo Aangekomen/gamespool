@@ -33,8 +33,12 @@ $shareText = 'Speel je een potje ' . ($game['name'] ?? '') . ' met me? ' . $shar
                 $name = $p['display_name'] ?? 'Onbekend';
             ?>
                 <li class="flex items-center gap-3 rounded-lg bg-surface dark:bg-slate-950 px-3 py-2.5">
-                    <div class="w-9 h-9 rounded-full bg-brand-light text-brand-dark flex items-center justify-center font-bold shrink-0">
-                        <?= e(strtoupper(mb_substr($name, 0, 1))) ?>
+                    <div class="w-9 h-9 rounded-full bg-brand-light text-brand-dark flex items-center justify-center font-bold shrink-0 overflow-hidden">
+                        <?php if (!empty($p['avatar_path'])): ?>
+                            <img src="<?= e(url('/uploads/avatars/' . $p['avatar_path'])) ?>" alt="" class="w-full h-full object-cover">
+                        <?php else: ?>
+                            <?= e(strtoupper(mb_substr($name, 0, 1))) ?>
+                        <?php endif; ?>
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="font-semibold text-navy dark:text-slate-100 truncate"><?= e($name) ?></p>

@@ -40,8 +40,12 @@ $type  = $game['score_type'] ?? 'win_loss';
             $avatarCls = $isWinner ? 'bg-white text-brand-dark' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
         ?>
             <li class="rounded-xl border <?= $cardCls ?> p-3 flex items-center gap-3 shadow-card">
-                <div class="w-10 h-10 rounded-full <?= $avatarCls ?> flex items-center justify-center text-sm font-bold shrink-0">
-                    <?= e(strtoupper(mb_substr($name, 0, 1))) ?>
+                <div class="w-10 h-10 rounded-full <?= $avatarCls ?> flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden">
+                    <?php if (!empty($p['avatar_path'])): ?>
+                        <img src="<?= e(url('/uploads/avatars/' . $p['avatar_path'])) ?>" alt="" class="w-full h-full object-cover">
+                    <?php else: ?>
+                        <?= e(strtoupper(mb_substr($name, 0, 1))) ?>
+                    <?php endif; ?>
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="<?= $nameCls ?>"><?= e($name) ?></p>

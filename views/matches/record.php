@@ -47,8 +47,12 @@ $type  = $game['score_type'];
                 <button type="button" data-pick="<?= e((string) $p['id']) ?>"
                         class="pick-btn w-full text-left rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 flex items-center gap-3 transition
                                hover:border-brand/50 active:border-brand">
-                    <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-400 shrink-0">
-                        <?= e(strtoupper(mb_substr($name, 0, 1))) ?>
+                    <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-400 shrink-0 overflow-hidden">
+                        <?php if (!empty($p['avatar_path'])): ?>
+                            <img src="<?= e(url('/uploads/avatars/' . $p['avatar_path'])) ?>" alt="" class="w-full h-full object-cover">
+                        <?php else: ?>
+                            <?= e(strtoupper(mb_substr($name, 0, 1))) ?>
+                        <?php endif; ?>
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="font-semibold text-navy dark:text-slate-100 truncate"><?= e($name) ?></p>

@@ -19,8 +19,12 @@
             <li>
                 <a href="<?= e(url('/admin/users/' . (int) $u['id'])) ?>"
                    class="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 shadow-card hover:bg-slate-50 dark:hover:bg-slate-800">
-                    <div class="w-10 h-10 rounded-full bg-brand-light text-brand-dark flex items-center justify-center font-bold shrink-0">
-                        <?= e(strtoupper(mb_substr((string) $name, 0, 1))) ?>
+                    <div class="w-10 h-10 rounded-full bg-brand-light text-brand-dark flex items-center justify-center font-bold shrink-0 overflow-hidden">
+                        <?php if (!empty($u['avatar_path'])): ?>
+                            <img src="<?= e(url('/uploads/avatars/' . $u['avatar_path'])) ?>" alt="" class="w-full h-full object-cover">
+                        <?php else: ?>
+                            <?= e(strtoupper(mb_substr((string) $name, 0, 1))) ?>
+                        <?php endif; ?>
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="font-semibold text-navy dark:text-slate-100 truncate">

@@ -56,8 +56,12 @@ $inputCls = 'rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:
                         <?= $i === 0 ? 'text-amber-500' : ($i === 1 ? 'text-slate-500 dark:text-slate-400' : ($i === 2 ? 'text-amber-700' : 'text-slate-400')) ?>">
                         <?= $i + 1 ?>
                     </span>
-                    <div class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-400 shrink-0">
-                        <?= e(strtoupper(mb_substr($p['display_name'], 0, 1))) ?>
+                    <div class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-400 shrink-0 overflow-hidden">
+                        <?php if (!empty($p['avatar_path'])): ?>
+                            <img src="<?= e(url('/uploads/avatars/' . $p['avatar_path'])) ?>" alt="" class="w-full h-full object-cover">
+                        <?php else: ?>
+                            <?= e(strtoupper(mb_substr($p['display_name'], 0, 1))) ?>
+                        <?php endif; ?>
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="font-semibold text-navy dark:text-slate-100 truncate"><?= e($p['display_name']) ?></p>
