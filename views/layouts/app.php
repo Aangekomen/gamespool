@@ -18,6 +18,7 @@
             <a href="<?= e(url('/')) ?>" class="font-semibold tracking-tight text-emerald-400">GamesPool</a>
             <nav class="flex items-center gap-1 sm:gap-3 text-sm">
                 <?php if (user()): ?>
+                    <a href="<?= e(url('/leaderboard')) ?>" class="px-3 py-1.5 rounded-md hover:bg-slate-800">Ranglijst</a>
                     <a href="<?= e(url('/matches')) ?>" class="px-3 py-1.5 rounded-md hover:bg-slate-800">Matches</a>
                     <a href="<?= e(url('/games')) ?>" class="px-3 py-1.5 rounded-md hover:bg-slate-800">Spellen</a>
                     <form method="post" action="<?= e(url('/logout')) ?>">

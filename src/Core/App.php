@@ -6,6 +6,7 @@ namespace GamesPool\Core;
 use GamesPool\Controllers\AuthController;
 use GamesPool\Controllers\GameController;
 use GamesPool\Controllers\HomeController;
+use GamesPool\Controllers\LeaderboardController;
 use GamesPool\Controllers\MatchController;
 
 class App
@@ -65,6 +66,9 @@ class App
         $r->get('/matches/{id}/record',           [MatchController::class, 'recordForm']);
         $r->post('/matches/{id}/record',          [MatchController::class, 'record']);
         $r->post('/matches/{id}/cancel',          [MatchController::class, 'cancel']);
+
+        // Leaderboard
+        $r->get('/leaderboard', [LeaderboardController::class, 'index']);
     }
 
     public function run(): void
