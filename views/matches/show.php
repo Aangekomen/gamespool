@@ -106,13 +106,100 @@ $type  = $game['score_type'] ?? 'win_loss';
     <?php endif; ?>
 
     <?php if ($match['state'] === 'in_progress'): ?>
+        <div class="mt-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between shadow-card">
+            <div class="text-sm text-slate-500 dark:text-slate-400">Speeltijd</div>
+            <div id="liveTimer" class="text-2xl font-extrabold tabular-nums text-navy dark:text-slate-100"
+                 data-started="<?= e((string) $match['started_at']) ?>">--:--</div>
+        </div>
         <a href="<?= e(url('/matches/' . $match['id'] . '/record')) ?>"
-           class="block text-center mt-4 w-full rounded-lg bg-brand text-white font-semibold px-4 py-3 hover:bg-brand-dark">
+           class="block text-center mt-3 w-full rounded-lg bg-brand text-white font-semibold px-4 py-3 hover:bg-brand-dark">
             Uitslag invoeren
         </a>
+    <?php elseif ($match['state'] === 'completed' && !empty($match['ended_at'])):
+        $secs = max(0, strtotime((string) $match['ended_at']) - strtotime((string) $match['started_at']));
+        $h = floor($secs / 3600); $m = floor(($secs % 3600) / 60); $s = $secs % 60;
+        $duration = $h > 0 ? sprintf('%dh %02dm', $h, $m) : sprintf('%dm %02ds', $m, $s);
+    ?>
+        <p class="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">
+            Speeltijd: <strong class="text-navy dark:text-slate-100"><?= e($duration) ?></strong>
+        </p>
+    <?php endif; ?>
+
+    <?php if ($match['state'] === 'completed'): ?>
+        <?php if (!empty($h2h) && ($h2h['data']['matches'] ?? 0) > 0):
+            $hd = $h2h['data'];
+            $aw = (int) $hd['a']['wins'];
+            $bw = (int) $hd['b']['wins'];
+            $ap = (int) $hd['a']['points'];
+            $bp = (int) $hd['b']['points'];
+        ?>
+            <div class="mt-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card">
+                <p class="text-[11px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400 mb-2">Onderlinge balans · <?= e((string) ($game['name'] ?? '')) ?></p>
+                <div class="grid grid-cols-3 items-center gap-2">
+                    <div class="text-center min-w-0">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 truncate"><?= e((string) $h2h['a_name']) ?></p>
+                        <p class="text-3xl font-black tabular-nums <?= $aw > $bw ? 'text-brand-dark' : 'text-navy dark:text-slate-100' ?>"><?= $aw ?></p>
+                        <p class="text-[10px] uppercase tracking-wide text-slate-400">winsten · <?= $ap ?> pt</p>
+                    </div>
+                    <div class="text-center text-slate-400 font-bold">vs</div>
+                    <div class="text-center min-w-0">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 truncate"><?= e((string) $h2h['b_name']) ?></p>
+                        <p class="text-3xl font-black tabular-nums <?= $bw > $aw ? 'text-brand-dark' : 'text-navy dark:text-slate-100' ?>"><?= $bw ?></p>
+                        <p class="text-[10px] uppercase tracking-wide text-slate-400">winsten · <?= $bp ?> pt</p>
+                    </div>
+                </div>
+                <p class="text-center text-[11px] text-slate-500 dark:text-slate-400 mt-2">
+                    Over <?= (int) $hd['matches'] ?> afgeronde wedstrijd<?= $hd['matches'] === 1 ? '' : 'en' ?>.
+                </p>
+            </div>
+        <?php endif; ?>
+
+        <form method="post" action="<?= e(url('/matches/' . $match['id'] . '/rematch')) ?>" class="mt-3">
+            <?= csrf_field() ?>
+            <button class="w-full rounded-lg bg-navy text-white font-semibold px-4 py-3 hover:bg-navy-soft flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6M20 20v-6h-6M5 14a8 8 0 0 0 14.5 2M19 10A8 8 0 0 0 4.5 8"/></svg>
+                Rematch — punten opsparen
+            </button>
+        </form>
+        <p class="text-center text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Speel opnieuw met dezelfde spelers; alle punten tellen op in je totaal.
+        </p>
+    <?php endif; ?>
+
+    <?php if (!empty($game['rules'])): ?>
+        <details class="mt-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-card overflow-hidden">
+            <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-navy dark:text-slate-100 flex items-center justify-between">
+                <span>📖 Spelregels — <?= e($game['name']) ?></span>
+                <span class="text-xs text-slate-400">tik om te openen</span>
+            </summary>
+            <div class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line border-t border-slate-100 dark:border-slate-800">
+                <?= nl2br(e((string) $game['rules'])) ?>
+            </div>
+        </details>
     <?php endif; ?>
 
     <div class="mt-6 text-center">
         <a href="<?= e(url('/matches')) ?>" class="text-sm text-slate-500 dark:text-slate-400 hover:text-navy">← terug naar matches</a>
     </div>
 </div>
+
+<?php if ($match['state'] === 'in_progress'): ?>
+<script>
+(function () {
+    const el = document.getElementById('liveTimer');
+    if (!el) return;
+    const started = new Date(el.dataset.started.replace(' ', 'T')).getTime();
+    if (isNaN(started)) return;
+    const pad = n => String(n).padStart(2, '0');
+    function tick() {
+        const secs = Math.max(0, Math.floor((Date.now() - started) / 1000));
+        const h = Math.floor(secs / 3600);
+        const m = Math.floor((secs % 3600) / 60);
+        const s = secs % 60;
+        el.textContent = (h > 0 ? h + ':' + pad(m) : pad(m)) + ':' + pad(s);
+    }
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
+<?php endif; ?>

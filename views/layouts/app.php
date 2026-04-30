@@ -71,6 +71,11 @@ $icon = function (string $name): string {
         };
     </script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23171a56'/><circle cx='32' cy='32' r='14' fill='%2335b782'/></svg>">
+    <link rel="manifest" href="<?= e(url('/manifest.webmanifest')) ?>">
+    <link rel="apple-touch-icon" href="<?= e(url('/icon-192.svg')) ?>">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FlexiComp">
     <style>
         body { -webkit-tap-highlight-color: transparent; font-family: 'Inter', system-ui, sans-serif; }
         @supports (padding: env(safe-area-inset-bottom)) {
@@ -102,7 +107,7 @@ $icon = function (string $name): string {
                     <?php endif; ?>
                 <?php else: ?>
                     <a href="<?= e(url('/login')) ?>" class="px-3 py-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:text-navy dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800">Inloggen</a>
-                    <a href="<?= e(url('/register')) ?>" class="px-3 py-1.5 rounded-md bg-brand hover:bg-brand-dark text-white font-medium">Account</a>
+                    <a href="<?= e(url('/register')) ?>" class="px-3 py-1.5 rounded-md bg-brand hover:bg-brand-dark text-white font-medium">Account aanmaken</a>
                 <?php endif; ?>
             </nav>
         </div>
@@ -150,6 +155,7 @@ $icon = function (string $name): string {
                 btn.addEventListener('click', () => {
                     const isDark = document.documentElement.classList.toggle('dark');
                     try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+                    if (window.fc) fc.tap();
                 });
             }
 
@@ -161,6 +167,52 @@ $icon = function (string $name): string {
                 }, 10000);
             });
         })();
+
+        // Globale haptic-helper. Gebruik: fc.tap() / fc.success() / fc.error()
+        // Stil falend op desktops zonder vibrate.
+        window.fc = (function () {
+            const can = 'vibrate' in navigator;
+            const vibe = (p) => { if (can) try { navigator.vibrate(p); } catch (e) {} };
+            return {
+                tap:     () => vibe(15),
+                success: () => vibe([20, 40, 30]),
+                error:   () => vibe([60, 60, 60]),
+                long:    () => vibe(80),
+            };
+        })();
+
+        // Tap-feedback op alle primaire knoppen (brand-kleur)
+        document.addEventListener('click', (ev) => {
+            const t = ev.target.closest('button, a');
+            if (!t) return;
+            const cls = t.className || '';
+            if (cls.includes('bg-brand') || cls.includes('bg-navy') || cls.includes('bg-red-')) {
+                fc.tap();
+            }
+        }, { passive: true });
+
+        // PWA: service-worker registreren (alleen op HTTPS of localhost)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('<?= e(url('/sw.js')) ?>').catch(() => {});
+            });
+        }
+
+        // PWA install prompt — toon discrete knop wanneer browser het toelaat
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btn = document.getElementById('installAppBtn');
+            if (btn) btn.classList.remove('hidden');
+        });
+        document.addEventListener('click', async (ev) => {
+            if (ev.target.closest('#installAppBtn') && deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt = null;
+                document.getElementById('installAppBtn')?.classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>

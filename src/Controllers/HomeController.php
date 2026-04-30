@@ -8,6 +8,7 @@ use GamesPool\Core\Database;
 use GamesPool\Models\Game;
 use GamesPool\Models\GameMatch;
 use GamesPool\Models\Leaderboard;
+use GamesPool\Models\Team;
 
 class HomeController
 {
@@ -18,12 +19,14 @@ class HomeController
         }
 
         $userId = (int) Auth::id();
+        $myTeams = Team::forUser($userId);
         return view('home', [
             'guest'         => false,
             'stats'         => $this->personalStats($userId),
             'games'         => Game::all(),
             'activeMatches' => GameMatch::active(8),
             'recentMatches' => GameMatch::recent(5, $userId),
+            'hasTeam'       => count($myTeams) > 0,
         ]);
     }
 

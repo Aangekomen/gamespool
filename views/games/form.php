@@ -66,7 +66,7 @@ $inputCls = 'w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-30
         </div>
 
         <div data-config="team_score" class="<?= $currentType === 'team_score' ? '' : 'hidden' ?> space-y-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-surface dark:bg-slate-950 p-4">
-            <p class="text-sm text-slate-600 dark:text-slate-300">Bv. tafelvoetbal of pingpong-dubbel: 2 teams, eindstand per team beslist over winst.</p>
+            <p class="text-sm text-slate-600 dark:text-slate-300">Bv. tafelvoetbal of pingpong-dubbel: 2 teams (1v1, 2v2 of meer), eindstand per team beslist over winst. Iedereen op het winnende team krijgt het volle aantal winst-punten.</p>
             <div class="grid grid-cols-3 gap-3">
                 <?php foreach (['win_points' => 'Winst', 'draw_points' => 'Gelijk', 'loss_points' => 'Verlies'] as $k => $label):
                     $val = (int) ($currentType === 'team_score' ? ($config[$k] ?? Game::defaultConfig('team_score')[$k]) : Game::defaultConfig('team_score')[$k]); ?>
@@ -94,6 +94,16 @@ $inputCls = 'w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-30
                            class="w-full rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-2 py-2 text-base">
                 </label>
             </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-navy dark:text-slate-100 mb-1.5" for="rules">
+                Spelregels <span class="text-slate-400">(optioneel)</span>
+            </label>
+            <textarea id="rules" name="rules" rows="6" maxlength="4000"
+                      class="<?= $inputCls ?>"
+                      placeholder="Korte regels voor wie het spel niet kent. Bv. — wie eerst 8 ballen pot wint. — gemist = beurt voor tegenstander. — ..."><?= e((string) old('rules', $game['rules'] ?? '')) ?></textarea>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Spelers kunnen dit boekje openklappen vanaf het scorescherm.</p>
         </div>
 
         <div class="flex items-center gap-3 pt-2">

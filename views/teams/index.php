@@ -1,6 +1,7 @@
 <?php \GamesPool\Core\View::extend('layouts/app'); ?>
 <?php
 /** @var array $teams */
+/** @var array $otherTeams */
 /** @var array $pendingMine */
 /** @var array $pendingPerTeam */
 use GamesPool\Models\Team;
@@ -116,3 +117,42 @@ $title = 'Teams';
         </ul>
     <?php endif; ?>
 </div>
+
+<!-- Andere teams die je nog niet in zit -->
+<?php if (!empty($otherTeams)): ?>
+    <div class="mt-6">
+        <div class="flex items-center justify-between mb-2 px-1">
+            <h2 class="text-sm font-bold text-navy dark:text-slate-100">Andere teams</h2>
+            <span class="text-xs text-slate-500 dark:text-slate-400"><?= count($otherTeams) ?> teams</span>
+        </div>
+        <ul class="space-y-2">
+            <?php foreach ($otherTeams as $t): ?>
+                <li>
+                    <a href="<?= e(url('/teams/' . (int) $t['id'])) ?>"
+                       class="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 hover:border-brand hover:bg-slate-50 dark:hover:bg-slate-800/60 shadow-card">
+                        <div class="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden">
+                            <?php if (!empty($t['logo_path'])): ?>
+                                <img src="<?= e(url('/uploads/logos/' . $t['logo_path'])) ?>" alt="" class="w-full h-full object-cover">
+                            <?php else: ?>
+                                <?= e(strtoupper(mb_substr($t['name'], 0, 1))) ?>
+                            <?php endif; ?>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold text-navy dark:text-slate-100 truncate"><?= e($t['name']) ?></p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                <?= (int) ($t['member_count'] ?? 0) ?> leden
+                                <?php if (!empty($t['captain_name'])): ?>
+                                    · captain <?= e((string) $t['captain_name']) ?>
+                                <?php endif; ?>
+                            </p>
+                        </div>
+                        <span class="text-slate-400 dark:text-slate-500 shrink-0">›</span>
+                    </a>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-3 text-center">
+            Wil je aansluiten? Vraag een lid om de 6-cijferige code en gebruik <a href="<?= e(url('/teams/join')) ?>" class="text-brand-dark font-semibold hover:underline">Team joinen</a>.
+        </p>
+    </div>
+<?php endif; ?>

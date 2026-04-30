@@ -82,7 +82,10 @@ class AuthController
 
         $this->sendVerificationMail((int) $id, $data['email'], $data['first_name'], $token);
 
-        Auth::login($id);
+        Auth::login((int) $id);
+        if (!empty($_POST['remember'])) {
+            Auth::issueRememberCookie((int) $id);
+        }
         Session::flash('_flash.success', 'Welkom! We hebben een bevestigingsmail naar ' . $data['email'] . ' gestuurd.');
         redirect('/');
     }
@@ -154,8 +157,9 @@ class AuthController
     {
         $email    = strtolower(trim((string) ($_POST['email'] ?? '')));
         $password = (string) ($_POST['password'] ?? '');
+        $remember = !empty($_POST['remember']);
 
-        if (!Auth::attempt($email, $password)) {
+        if (!Auth::attempt($email, $password, $remember)) {
             Session::flash('_errors', ['email' => ['E-mailadres of wachtwoord onjuist']]);
             Session::flash('_old', ['email' => $email]);
             redirect('/login');

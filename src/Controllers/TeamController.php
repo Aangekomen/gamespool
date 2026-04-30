@@ -15,6 +15,7 @@ class TeamController
         Auth::requireLogin();
         $userId = (int) Auth::id();
         $myTeams = Team::forUser($userId);
+        $myIds   = array_map(fn($t) => (int) $t['id'], $myTeams);
 
         // For each captain'd team, also show pending join requests
         $pendingPerTeam = [];
@@ -24,8 +25,14 @@ class TeamController
             }
         }
 
+        $otherTeams = array_values(array_filter(
+            Team::allWithStats(),
+            fn($t) => !in_array((int) $t['id'], $myIds, true)
+        ));
+
         return view('teams/index', [
             'teams'          => $myTeams,
+            'otherTeams'     => $otherTeams,
             'pendingMine'    => Team::pendingForUser($userId),
             'pendingPerTeam' => $pendingPerTeam,
         ]);

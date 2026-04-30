@@ -119,10 +119,27 @@ class MatchController
         Auth::requireLogin();
         $match = GameMatch::find((int) $id) ?? $this->notFound();
         $game = Game::find((int) $match['game_id']);
+        $participants = GameMatch::participants((int) $match['id']);
+
+        // Head-to-head balans alleen tonen bij exact 2 deelnemers (1v1).
+        $h2h = null;
+        if (count($participants) === 2 && $match['state'] === 'completed') {
+            $a = (int) ($participants[0]['user_id'] ?? 0);
+            $b = (int) ($participants[1]['user_id'] ?? 0);
+            if ($a > 0 && $b > 0) {
+                $h2h = [
+                    'a_name'  => $participants[0]['display_name'] ?? '',
+                    'b_name'  => $participants[1]['display_name'] ?? '',
+                    'data'    => GameMatch::headToHead($a, $b, (int) $match['game_id']),
+                ];
+            }
+        }
+
         return view('matches/show', [
             'match'        => $match,
             'game'         => $game,
-            'participants' => GameMatch::participants((int) $match['id']),
+            'participants' => $participants,
+            'h2h'          => $h2h,
         ]);
     }
 
@@ -228,6 +245,79 @@ class MatchController
             Session::flash('_flash.error', 'Opslaan mislukt: ' . $e->getMessage());
         }
         redirect('/matches/' . $match['id']);
+    }
+
+    /**
+     * Lightweight JSON snapshot for lobby polling — avoids full page reloads.
+     */
+    public function lobbyState(string $token): void
+    {
+        Auth::requireLogin();
+        $match = GameMatch::findByToken($token);
+        header('Content-Type: application/json');
+        if (!$match) { echo json_encode(['ok' => false]); return; }
+        $parts = GameMatch::participants((int) $match['id']);
+        echo json_encode([
+            'ok'                => true,
+            'state'             => $match['state'],
+            'participant_count' => count($parts),
+            'match_id'          => (int) $match['id'],
+        ]);
+    }
+
+    /**
+     * Show the in-app QR scanner page (camera + manual code entry).
+     */
+    public function scanPage(): string
+    {
+        Auth::requireLogin();
+        $devices = Database::fetchAll(
+            "SELECT d.id, d.name, d.code, g.name AS game_name,
+                    (SELECT COUNT(*) FROM matches m
+                       WHERE m.device_id = d.id AND m.state IN ('waiting','in_progress')) AS active_count,
+                    (SELECT m2.started_at FROM matches m2
+                       WHERE m2.device_id = d.id AND m2.state IN ('waiting','in_progress')
+                       ORDER BY m2.id DESC LIMIT 1) AS active_started_at
+               FROM devices d
+          LEFT JOIN games g ON g.id = d.game_id
+              ORDER BY d.name ASC"
+        );
+        return view('matches/scan', ['devices' => $devices]);
+    }
+
+    /**
+     * /matches/{id}/rematch — create a new match with the same game and the
+     * same registered participants. Lets a group "punten opsparen" over a
+     * series without having to re-enter players each time.
+     */
+    public function rematch(string $id): void
+    {
+        Auth::requireLogin();
+        $match = GameMatch::find((int) $id) ?? $this->notFound();
+
+        $existing = GameMatch::participants((int) $match['id']);
+        $participants = [];
+        foreach ($existing as $p) {
+            if (!empty($p['user_id'])) {
+                $participants[] = [
+                    'user_id' => (int) $p['user_id'],
+                    'team_id' => $p['team_id'] ?? null,
+                ];
+            }
+        }
+        if (count($participants) < 2) {
+            Session::flash('_flash.error', 'Niet genoeg deelnemers voor een rematch.');
+            redirect('/matches/' . $match['id']);
+        }
+        $newId = GameMatch::create(
+            (int) $match['game_id'],
+            (int) Auth::id(),
+            $participants,
+            $match['label'] ?? null,
+            !empty($match['device_id']) ? (int) $match['device_id'] : null
+        );
+        Session::flash('_flash.success', 'Rematch gestart!');
+        redirect('/matches/' . $newId . '/record');
     }
 
     public function cancel(string $id): void

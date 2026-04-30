@@ -6,9 +6,9 @@
         <h1 class="text-2xl font-bold text-navy dark:text-slate-100">Matches</h1>
         <p class="text-slate-500 dark:text-slate-400 text-sm">Recent gespeelde en lopende potjes.</p>
     </div>
-    <a href="<?= e(url('/matches/new')) ?>"
+    <a href="<?= e(url('/scan')) ?>"
        class="hidden sm:inline-flex items-center shrink-0 px-4 py-2 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">
-        + Nieuwe match
+        Scan apparaat
     </a>
 </div>
 
@@ -21,7 +21,8 @@
 <?php if (empty($matches)): ?>
     <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center shadow-card">
         <p class="text-slate-600 dark:text-slate-300">Nog geen matches gespeeld.</p>
-        <a href="<?= e(url('/matches/new')) ?>" class="inline-block mt-4 px-4 py-2 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Start je eerste match</a>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Scan de QR-code op een apparaat om te starten.</p>
+        <a href="<?= e(url('/scan')) ?>" class="inline-block mt-4 px-4 py-2 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Scan apparaat</a>
     </div>
 <?php else: ?>
     <ul class="space-y-2">

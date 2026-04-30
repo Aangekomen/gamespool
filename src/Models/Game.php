@@ -12,11 +12,14 @@ class Game
 
     public static function defaultConfig(string $scoreType): array
     {
+        // Standaard 1 punt per winst — kleinere getallen lezen rustiger op
+        // het scoreboard en passen beter bij barspellen waar mensen in series
+        // spelen (totaal loopt sneller naar 10/20 dan naar 30/60).
         return match ($scoreType) {
-            'win_loss'         => ['win_points' => 3, 'loss_points' => 0, 'draw_points' => 1],
+            'win_loss'         => ['win_points' => 1, 'loss_points' => 0, 'draw_points' => 0],
             'points_per_match' => [],
             'elo'              => ['start_rating' => 1000, 'k_factor' => 24],
-            'team_score'       => ['win_points' => 3, 'loss_points' => 0, 'draw_points' => 1],
+            'team_score'       => ['win_points' => 1, 'loss_points' => 0, 'draw_points' => 0],
             default            => [],
         };
     }
@@ -48,12 +51,13 @@ class Game
     {
         $slug = Slug::unique($data['name'], fn($s) => self::slugTaken($s));
         return Database::insert(
-            'INSERT INTO games (name, slug, score_type, score_config, created_by) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO games (name, slug, score_type, score_config, rules, created_by) VALUES (?, ?, ?, ?, ?, ?)',
             [
                 $data['name'],
                 $slug,
                 $data['score_type'],
                 json_encode(self::sanitizeConfig($data['score_type'], $data['score_config'] ?? []), JSON_THROW_ON_ERROR),
+                $data['rules'] ?? null,
                 $userId,
             ]
         );
@@ -69,12 +73,13 @@ class Game
             $slug = Slug::unique($data['name'], fn($s) => self::slugTaken($s, $id));
         }
         Database::query(
-            'UPDATE games SET name = ?, slug = ?, score_type = ?, score_config = ? WHERE id = ?',
+            'UPDATE games SET name = ?, slug = ?, score_type = ?, score_config = ?, rules = ? WHERE id = ?',
             [
                 $data['name'] ?? $current['name'],
                 $slug,
                 $data['score_type'] ?? $current['score_type'],
                 json_encode(self::sanitizeConfig($data['score_type'] ?? $current['score_type'], $data['score_config'] ?? []), JSON_THROW_ON_ERROR),
+                array_key_exists('rules', $data) ? $data['rules'] : ($current['rules'] ?? null),
                 $id,
             ]
         );

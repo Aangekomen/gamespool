@@ -9,6 +9,7 @@ use GamesPool\Core\Database;
 use GamesPool\Core\ImageUpload;
 use GamesPool\Core\Session;
 use GamesPool\Core\Validator;
+use GamesPool\Models\Achievements;
 use GamesPool\Models\Company;
 use GamesPool\Models\GameMatch;
 use GamesPool\Models\Leaderboard;
@@ -27,6 +28,8 @@ class ProfileController
             'stats'         => $this->stats($userId),
             'teams'         => Team::forUser($userId),
             'recentMatches' => GameMatch::recent(5, $userId),
+            'streak'        => Achievements::streak($userId),
+            'badges'        => Achievements::badges($userId),
         ]);
     }
 

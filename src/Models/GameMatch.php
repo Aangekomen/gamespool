@@ -183,6 +183,49 @@ class GameMatch
         return $rows;
     }
 
+    /**
+     * Onderlinge balans tussen exact twee spelers voor een spel:
+     * geeft per speler aantal winsten + totaal punten over alle afgeronde
+     * matches waarbij precies dit duo speelde. Gebruikt voor head-to-head
+     * weergave bij Rematch.
+     *
+     * Levert op: ['a' => ['wins' => N, 'points' => N], 'b' => [...], 'matches' => N]
+     */
+    public static function headToHead(int $userA, int $userB, int $gameId): array
+    {
+        $rows = Database::fetchAll(
+            "SELECT m.id, p.user_id, p.result, p.points_awarded
+               FROM matches m
+               JOIN match_participants p ON p.match_id = m.id
+              WHERE m.game_id = ?
+                AND m.state = 'completed'
+                AND m.id IN (
+                    SELECT m2.id FROM matches m2
+                      JOIN match_participants pa ON pa.match_id = m2.id AND pa.user_id = ?
+                      JOIN match_participants pb ON pb.match_id = m2.id AND pb.user_id = ?
+                     WHERE m2.game_id = ?
+                       AND m2.state = 'completed'
+                       AND (SELECT COUNT(*) FROM match_participants pc WHERE pc.match_id = m2.id) = 2
+                )",
+            [$gameId, $userA, $userB, $gameId]
+        );
+
+        $tally = [
+            'a' => ['wins' => 0, 'points' => 0],
+            'b' => ['wins' => 0, 'points' => 0],
+            'matches' => 0,
+        ];
+        $matchIds = [];
+        foreach ($rows as $r) {
+            $matchIds[(int) $r['id']] = true;
+            $key = ((int) $r['user_id'] === $userA) ? 'a' : 'b';
+            if ($r['result'] === 'win') $tally[$key]['wins']++;
+            $tally[$key]['points'] += (int) $r['points_awarded'];
+        }
+        $tally['matches'] = count($matchIds);
+        return $tally;
+    }
+
     public static function allRecent(int $limit = 100): array
     {
         return Database::fetchAll(
@@ -211,6 +254,25 @@ class GameMatch
             'UPDATE matches SET state = "cancelled", ended_at = NOW() WHERE id = ? AND state IN ("in_progress","waiting")',
             [$matchId]
         );
+    }
+
+    /**
+     * Sluit matches af die te lang in 'waiting' of 'in_progress' staan.
+     * Voorkomt dat tests/abandoned matches eeuwig "bezig" blijven en
+     * een apparaat onbruikbaar maken.
+     *
+     *   waiting     → 30 minuten
+     *   in_progress →  6 uur
+     */
+    public static function cancelStale(): int
+    {
+        $row = Database::pdo()->exec(
+            "UPDATE matches
+                SET state = 'cancelled', ended_at = NOW()
+              WHERE (state = 'waiting'     AND started_at < (NOW() - INTERVAL 30 MINUTE))
+                 OR (state = 'in_progress' AND started_at < (NOW() - INTERVAL 6 HOUR))"
+        );
+        return (int) $row;
     }
 
     /**

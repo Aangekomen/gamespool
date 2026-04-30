@@ -4,6 +4,8 @@
 /** @var array $stats */
 /** @var array $teams */
 /** @var array $recentMatches */
+/** @var array $streak */
+/** @var array $badges */
 $title = 'Profiel';
 $avatarSrc = !empty($user['avatar_path'])
     ? url('/uploads/avatars/' . $user['avatar_path']) . '?v=' . substr((string) ($user['avatar_path']), 0, 6)
@@ -52,6 +54,28 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
     <?php endforeach; ?>
 </div>
 
+<!-- Streak strip — alleen tonen als er momentum is -->
+<?php if (($streak['count'] ?? 0) >= 2): ?>
+    <?php
+        $isWin = $streak['type'] === 'win';
+        $box = $isWin
+            ? 'bg-brand-light border-brand/30 text-brand-dark'
+            : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-300';
+        $icon = $isWin ? '🔥' : '💧';
+        $label = $isWin ? 'win-streak' : 'loss-streak';
+    ?>
+    <div class="rounded-2xl border <?= $box ?> p-3 mb-4 flex items-center gap-3 shadow-card">
+        <span class="text-2xl shrink-0"><?= $icon ?></span>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold">
+                <?= (int) $streak['count'] ?>×
+                <?= $isWin ? 'gewonnen' : 'verloren' ?> op rij
+            </p>
+            <p class="text-[11px] uppercase tracking-wide opacity-70"><?= $label ?> — beste ooit: <?= (int) ($streak['best_win_streak'] ?? 0) ?></p>
+        </div>
+    </div>
+<?php endif; ?>
+
 <!-- Win/Loss breakdown -->
 <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-4">
     <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-3">Resultaten</h2>
@@ -70,6 +94,60 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
         </div>
     </div>
 </div>
+
+<!-- Badges -->
+<?php if (!empty($badges)):
+    $earned = array_values(array_filter($badges, fn ($b) => !empty($b['earned'])));
+    $upcoming = array_values(array_filter($badges, fn ($b) => empty($b['earned'])));
+    // Toon de 3 dichtstbijzijnde nog-te-halen badges
+    usort($upcoming, function ($a, $b) {
+        $ar = ($a['progress'] ?? 0) / max(1, (int) ($a['goal'] ?? 1));
+        $br = ($b['progress'] ?? 0) / max(1, (int) ($b['goal'] ?? 1));
+        return $br <=> $ar;
+    });
+    $upcoming = array_slice($upcoming, 0, 3);
+?>
+    <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-4">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-bold text-navy dark:text-slate-100">Badges</h2>
+            <span class="text-xs text-slate-500 dark:text-slate-400"><?= count($earned) ?> / <?= count($badges) ?> verdiend</span>
+        </div>
+        <?php if (!empty($earned)): ?>
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+                <?php foreach ($earned as $b): ?>
+                    <div title="<?= e($b['description']) ?>"
+                         class="rounded-xl bg-brand-light border border-brand/30 p-3 text-center">
+                        <div class="text-2xl leading-none"><?= e($b['emoji']) ?></div>
+                        <p class="mt-1 text-[11px] font-bold text-brand-dark truncate"><?= e($b['label']) ?></p>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+        <?php if (!empty($upcoming)): ?>
+            <p class="text-[11px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 mb-2">Volgende doelen</p>
+            <ul class="space-y-1.5">
+                <?php foreach ($upcoming as $b):
+                    $pct = (int) round((($b['progress'] ?? 0) / max(1, (int) ($b['goal'] ?? 1))) * 100);
+                ?>
+                    <li class="flex items-center gap-3">
+                        <span class="text-lg shrink-0 grayscale opacity-60"><?= e($b['emoji']) ?></span>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-baseline justify-between gap-2">
+                                <p class="text-xs font-semibold text-navy dark:text-slate-100 truncate"><?= e($b['label']) ?></p>
+                                <p class="text-[11px] tabular-nums text-slate-500 dark:text-slate-400 shrink-0">
+                                    <?= (int) ($b['progress'] ?? 0) ?> / <?= (int) ($b['goal'] ?? 0) ?>
+                                </p>
+                            </div>
+                            <div class="mt-1 h-1.5 rounded bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                                <div class="h-full bg-brand transition-all" style="width: <?= $pct ?>%"></div>
+                            </div>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
 
 <!-- My teams -->
 <?php if (!empty($teams)): ?>

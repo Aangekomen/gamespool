@@ -143,7 +143,8 @@
         <?php else: ?>
             <div class="grid grid-cols-3 gap-3">
                 <?php foreach ($devices as $d):
-                    $busy = (int) $d['active_count'] > 0;
+                    $busy    = (int) $d['active_count'] > 0;
+                    $waiting = $busy && ($d['active_state'] ?? '') === 'waiting';
                 ?>
                     <div class="rounded-2xl border <?= $busy ? 'border-amber-500/40 bg-amber-500/5' : 'border-slate-800 bg-slate-900/60' ?> p-4 flex items-center gap-3">
                         <div class="w-12 h-12 rounded-md bg-white p-1 shrink-0">
@@ -154,7 +155,15 @@
                             <p class="font-bold text-white text-base truncate"><?= htmlspecialchars($d['name']) ?></p>
                             <p class="text-xs text-slate-400 truncate"><?= htmlspecialchars($d['game_name'] ?? 'geen spel gekoppeld') ?></p>
                             <p class="text-[10px] uppercase tracking-widest font-bold mt-0.5 <?= $busy ? 'text-amber-300' : 'text-brand' ?>">
-                                <?= $busy ? 'Bezig' : 'Vrij' ?> · <?= htmlspecialchars($d['code']) ?>
+                                <?php if ($waiting): ?>
+                                    Wacht op tegenstander
+                                <?php elseif ($busy && !empty($d['active_started_at'])): ?>
+                                    Bezig · <span class="device-timer" data-started="<?= htmlspecialchars((string) $d['active_started_at']) ?>">--:--</span>
+                                <?php elseif ($busy): ?>
+                                    Bezig
+                                <?php else: ?>
+                                    Vrij · <?= htmlspecialchars($d['code']) ?>
+                                <?php endif; ?>
                             </p>
                         </div>
                     </div>
@@ -176,6 +185,22 @@
     }
     tick();
     setInterval(tick, 30000);
+
+    // Live tellertjes per bezet apparaat — geen page-refresh nodig.
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function refreshDeviceTimers() {
+        const now = Date.now();
+        document.querySelectorAll('.device-timer').forEach(el => {
+            const started = new Date(el.dataset.started.replace(' ', 'T')).getTime();
+            if (isNaN(started)) return;
+            const secs = Math.max(0, Math.floor((now - started) / 1000));
+            const h = Math.floor(secs / 3600);
+            const m = Math.floor((secs % 3600) / 60);
+            el.textContent = (h > 0 ? h + ':' + pad(m) : pad(m)) + ':' + pad(secs % 60);
+        });
+    }
+    refreshDeviceTimers();
+    setInterval(refreshDeviceTimers, 1000);
 </script>
 </body>
 </html>

@@ -5,6 +5,7 @@ namespace GamesPool\Core;
 
 use GamesPool\Controllers\AdminController;
 use GamesPool\Controllers\AuthController;
+use GamesPool\Models\GameMatch;
 use GamesPool\Controllers\GameController;
 use GamesPool\Controllers\HomeController;
 use GamesPool\Controllers\LeaderboardController;
@@ -69,11 +70,13 @@ class App
 
         // Matches
         $r->get('/matches',                       [MatchController::class, 'index']);
+        $r->get('/matches/scan',                  [MatchController::class, 'scanPage']);
         $r->get('/matches/new',                   [MatchController::class, 'create']);
         $r->post('/matches',                      [MatchController::class, 'store']);
         $r->get('/matches/{id}',                  [MatchController::class, 'show']);
         $r->get('/matches/{id}/record',           [MatchController::class, 'recordForm']);
         $r->post('/matches/{id}/record',          [MatchController::class, 'record']);
+        $r->post('/matches/{id}/rematch',         [MatchController::class, 'rematch']);
         $r->post('/matches/{id}/cancel',          [MatchController::class, 'cancel']);
 
         // Leaderboard
@@ -104,8 +107,10 @@ class App
         // QR / device match flow
         $r->get('/d/{code}',              [MatchController::class, 'scanDevice']);
         $r->get('/m/{token}',             [MatchController::class, 'lobby']);
+        $r->get('/m/{token}/state.json',  [MatchController::class, 'lobbyState']);
         $r->post('/m/{token}/accept',     [MatchController::class, 'acceptLobby']);
         $r->get('/qr.svg',                [QrController::class,    'svg']);
+        $r->get('/scan',                  [MatchController::class, 'scanPage']);
 
         // Public TV / kiosk view
         $r->get('/tv',                    [TvController::class,    'index']);
@@ -143,8 +148,24 @@ class App
     public function run(): void
     {
         Csrf::verifyOrAbort();
+        // Trigger remember-cookie check NOW (before any output) so the
+        // setcookie() call inside Auth::tryRememberCookie() can emit headers.
+        Auth::check();
+        $this->maybeCleanupStaleMatches();
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $uri    = $_SERVER['REQUEST_URI'] ?? '/';
         $this->router->dispatch($method, $uri);
+    }
+
+    /**
+     * Throttled stale-match cleanup. Geen cron op Plesk nodig — eens per
+     * 5 minuten draaien we vanuit een willekeurige request de SQL UPDATE.
+     */
+    private function maybeCleanupStaleMatches(): void
+    {
+        $last = (int) (Session::get('_last_cleanup', 0));
+        if (time() - $last < 300) return;
+        Session::set('_last_cleanup', time());
+        try { GameMatch::cancelStale(); } catch (\Throwable $e) { /* stil falen */ }
     }
 }

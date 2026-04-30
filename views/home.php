@@ -4,6 +4,7 @@
 /** @var array|null $stats */
 /** @var array|null $games */
 /** @var array|null $recentMatches */
+/** @var bool|null $hasTeam */
 $title = 'GamesPool';
 ?>
 
@@ -33,10 +34,20 @@ $title = 'GamesPool';
     })();
 ?>
     <!-- Greeting -->
-    <div class="mb-4">
-        <p class="text-slate-500 dark:text-slate-400 text-sm"><?= e($greet) ?>, <span class="inline-block">👋</span></p>
-        <h1 class="text-2xl font-bold text-navy dark:text-slate-100"><?= e($name) ?></h1>
-    </div>
+    <?php $me = user(); ?>
+    <a href="<?= e(url('/profile')) ?>" class="mb-4 flex items-center gap-3 group">
+        <span class="w-12 h-12 rounded-full bg-brand-light text-brand-dark flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden ring-2 ring-white/20 group-hover:ring-brand/40 transition">
+            <?php if (!empty($me['avatar_path'])): ?>
+                <img src="<?= e(url('/uploads/avatars/' . $me['avatar_path'])) ?>" alt="<?= e($name) ?>" class="w-full h-full object-cover">
+            <?php else: ?>
+                <?= e(strtoupper(mb_substr((string) $name, 0, 1))) ?>
+            <?php endif; ?>
+        </span>
+        <div class="min-w-0">
+            <p class="text-slate-500 dark:text-slate-400 text-sm"><?= e($greet) ?>, <span class="inline-block">👋</span></p>
+            <h1 class="text-2xl font-bold text-navy dark:text-slate-100 truncate"><?= e($name) ?></h1>
+        </div>
+    </a>
 
     <!-- Hero stat card -->
     <div class="rounded-2xl bg-navy text-white p-5 shadow-card mb-4 relative overflow-hidden">
@@ -50,9 +61,9 @@ $title = 'GamesPool';
         <div class="grid grid-cols-3 gap-1 sm:gap-3 mt-5 relative">
             <?php
             $cells = [
-                ['label' => 'Vandaag',  'value' => $stats['today_matches'], 'sub' => 'matches',  'color' => '#35b782'],
-                ['label' => 'Winst',    'value' => $stats['win_rate'] . '%', 'sub' => $stats['wins'] . ' ✕ ' . $stats['losses'], 'color' => '#a78bfa'],
-                ['label' => 'Punten',   'value' => $stats['total_points'], 'sub' => 'lifetime', 'color' => '#60a5fa'],
+                ['label' => 'Gespeeld',   'value' => $stats['today_matches'], 'sub' => 'matches vandaag',           'color' => '#35b782'],
+                ['label' => 'Winstratio', 'value' => $stats['win_rate'] . '%', 'sub' => $stats['wins'] . ' winst · ' . $stats['losses'] . ' verlies', 'color' => '#a78bfa'],
+                ['label' => 'Jouw punten','value' => $stats['total_points'], 'sub' => 'totaal verdiend',            'color' => '#60a5fa'],
             ];
             foreach ($cells as $c):
                 // For the circular ring: percentage just decorative for visual consistency
@@ -125,11 +136,17 @@ $title = 'GamesPool';
         </div>
     <?php endif; ?>
 
-    <!-- Primary CTA -->
-    <a href="<?= e(url('/matches/new')) ?>"
-       class="block text-center w-full rounded-xl bg-brand text-white text-base font-bold px-4 py-4 hover:bg-brand-dark shadow-card mb-4">
-        + Start nieuwe match
+    <!-- Primary CTA: nieuwe matches starten via QR-scan -->
+    <a href="<?= e(url('/scan')) ?>"
+       class="block text-center w-full rounded-xl bg-brand text-white text-base font-bold px-4 py-4 hover:bg-brand-dark shadow-card mb-4 flex items-center justify-center gap-2">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 7h4v4H7zM13 7h4v4h-4zM7 13h4v4H7zM13 13h2v2h-2zM17 13v2h-2M15 17h2v-2"/>
+        </svg>
+        Scan apparaat — start match
     </a>
+    <p class="text-center text-xs text-slate-500 dark:text-slate-400 -mt-3 mb-4">
+        Nieuwe matches start je door de QR op tafel te scannen.
+    </p>
 
     <!-- Two stat cards -->
     <div class="grid grid-cols-2 gap-3 mb-4">
@@ -192,4 +209,54 @@ $title = 'GamesPool';
             </ul>
         <?php endif; ?>
     </div>
+<?php endif; ?>
+
+<?php if (!($guest ?? true) && empty($hasTeam)): ?>
+    <!-- Popup: speler heeft nog geen team -->
+    <div id="noTeamModal"
+         class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 px-4"
+         role="dialog" aria-modal="true" aria-labelledby="noTeamTitle">
+        <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-card p-5">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-full bg-brand-light text-brand-dark flex items-center justify-center">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <h2 id="noTeamTitle" class="text-base font-bold text-navy dark:text-slate-100">Je zit nog in geen team</h2>
+            </div>
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                Sluit aan bij een team om mee te tellen voor team-leaderboards en samen punten op te sparen.
+            </p>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <a href="<?= e(url('/teams/join')) ?>"
+                   class="block text-center rounded-lg bg-brand text-white font-semibold py-2.5 hover:bg-brand-dark">
+                    Team joinen
+                </a>
+                <a href="<?= e(url('/teams/new')) ?>"
+                   class="block text-center rounded-lg bg-slate-100 dark:bg-slate-800 text-navy dark:text-slate-100 font-semibold py-2.5 hover:bg-slate-200 dark:hover:bg-slate-700">
+                    Team maken
+                </a>
+            </div>
+            <button id="noTeamLater" type="button"
+                    class="w-full text-center text-xs text-slate-500 dark:text-slate-400 hover:text-navy py-1">
+                Later vragen
+            </button>
+        </div>
+    </div>
+    <script>
+    (function () {
+        const KEY = 'noTeamModalDismissed';
+        let dismissed = 0;
+        try { dismissed = parseInt(localStorage.getItem(KEY) || '0', 10); } catch (e) {}
+        // Pas opnieuw tonen na 24 uur "later"-tap
+        if (Date.now() - dismissed < 24 * 60 * 60 * 1000) return;
+        const modal = document.getElementById('noTeamModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.getElementById('noTeamLater').addEventListener('click', () => {
+            try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+    })();
+    </script>
 <?php endif; ?>

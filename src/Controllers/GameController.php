@@ -104,10 +104,15 @@ class GameController
 
     private function payload(): array
     {
+        $rules = trim((string) ($_POST['rules'] ?? ''));
+        if ($rules === '') $rules = null;
+        elseif (mb_strlen($rules) > 4000) $rules = mb_substr($rules, 0, 4000);
+
         return [
             'name'         => trim((string) ($_POST['name'] ?? '')),
             'score_type'   => (string) ($_POST['score_type'] ?? ''),
             'score_config' => is_array($_POST['score_config'] ?? null) ? $_POST['score_config'] : [],
+            'rules'        => $rules,
         ];
     }
 

@@ -141,9 +141,28 @@ $shareText = 'Speel je een potje ' . ($game['name'] ?? '') . ' met me? ' . $shar
             });
         }
 
-        // Auto-refresh while waiting (poll every 4s)
+        // Lichte JSON-poll: alleen herladen wanneer er echt iets verandert.
+        // Geen volledig page-refresh elke paar seconden meer.
         <?php if ($isHost && count($participants) < 2): ?>
-            setInterval(() => location.reload(), 4000);
+            const initial = <?= (int) count($participants) ?>;
+            const stateUrl = <?= json_encode(url('/m/' . $match['join_token'] . '/state.json')) ?>;
+            let stops = 0;
+            const poll = async () => {
+                try {
+                    const res = await fetch(stateUrl, { headers: { 'Accept': 'application/json' } });
+                    if (!res.ok) throw new Error('bad status');
+                    const j = await res.json();
+                    if (j.ok && (j.state !== 'waiting' || (j.participant_count|0) > initial)) {
+                        location.reload();
+                        return;
+                    }
+                    stops = 0;
+                } catch (e) {
+                    if (++stops > 5) return; // give up after a while
+                }
+                setTimeout(poll, 5000);
+            };
+            setTimeout(poll, 5000);
         <?php endif; ?>
     })();
 </script>

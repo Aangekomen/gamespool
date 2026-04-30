@@ -9,11 +9,29 @@ $type  = $game['score_type'];
 ?>
 
 <div class="max-w-lg mx-auto">
-    <h1 class="text-2xl font-bold text-navy dark:text-slate-100 mb-1">Uitslag invoeren</h1>
-    <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">
-        <?= e($game['name']) ?> · <?= e(Game::scoreTypeLabel($type)) ?>
-        <?php if ($match['label']): ?> · <?= e($match['label']) ?><?php endif; ?>
-    </p>
+    <div class="flex items-start justify-between gap-3 mb-3">
+        <div class="min-w-0">
+            <h1 class="text-2xl font-bold text-navy dark:text-slate-100">Uitslag invoeren</h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm truncate">
+                <?= e($game['name']) ?> · <?= e(Game::scoreTypeLabel($type)) ?>
+                <?php if ($match['label']): ?> · <?= e($match['label']) ?><?php endif; ?>
+            </p>
+        </div>
+        <div id="liveTimer" data-started="<?= e((string) $match['started_at']) ?>"
+             class="shrink-0 rounded-lg bg-navy text-white px-3 py-2 text-base font-bold tabular-nums">--:--</div>
+    </div>
+
+    <?php if (!empty($game['rules'])): ?>
+        <details class="mb-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-card overflow-hidden">
+            <summary class="cursor-pointer px-4 py-2.5 text-sm font-semibold text-navy dark:text-slate-100 flex items-center justify-between">
+                <span>📖 Spelregels</span>
+                <span class="text-xs text-slate-400">open / sluit</span>
+            </summary>
+            <div class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line border-t border-slate-100 dark:border-slate-800">
+                <?= nl2br(e((string) $game['rules'])) ?>
+            </div>
+        </details>
+    <?php endif; ?>
 
     <form method="post" action="<?= e(url('/matches/' . $match['id'] . '/record')) ?>"
           class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card">
@@ -126,6 +144,25 @@ $type  = $game['score_type'];
         </button>
     </form>
 </div>
+
+<script>
+(function () {
+    const el = document.getElementById('liveTimer');
+    if (!el) return;
+    const started = new Date(el.dataset.started.replace(' ', 'T')).getTime();
+    if (isNaN(started)) return;
+    const pad = n => String(n).padStart(2, '0');
+    function tick() {
+        const secs = Math.max(0, Math.floor((Date.now() - started) / 1000));
+        const h = Math.floor(secs / 3600);
+        const m = Math.floor((secs % 3600) / 60);
+        const s = secs % 60;
+        el.textContent = (h > 0 ? h + ':' + pad(m) : pad(m)) + ':' + pad(s);
+    }
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
 
 <?php if ($type !== 'points_per_match'): ?>
 <script>
