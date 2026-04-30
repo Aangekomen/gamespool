@@ -14,6 +14,9 @@
             <a href="<?= e(url('/login')) ?>" class="inline-flex justify-center items-center px-5 py-3 rounded-lg bg-slate-800 hover:bg-slate-700">Inloggen</a>
         </div>
     <?php else: ?>
-        <p class="mt-6 text-slate-300">Welkom terug, <span class="text-emerald-400 font-medium"><?= e(user()['display_name']) ?></span>. De rest van de app komt eraan.</p>
+        <p class="mt-6 text-slate-300">Welkom terug, <span class="text-emerald-400 font-medium"><?= e(user()['display_name']) ?></span>.</p>
+        <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="<?= e(url('/games')) ?>" class="inline-flex justify-center items-center px-5 py-3 rounded-lg bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400">Spellen beheren</a>
+        </div>
     <?php endif; ?>
 </section>

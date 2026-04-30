@@ -16,9 +16,9 @@
     <header class="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800">
         <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
             <a href="<?= e(url('/')) ?>" class="font-semibold tracking-tight text-emerald-400">GamesPool</a>
-            <nav class="flex items-center gap-3 text-sm">
+            <nav class="flex items-center gap-1 sm:gap-3 text-sm">
                 <?php if (user()): ?>
-                    <span class="hidden sm:inline text-slate-400">Hoi <?= e(user()['display_name']) ?></span>
+                    <a href="<?= e(url('/games')) ?>" class="px-3 py-1.5 rounded-md hover:bg-slate-800">Spellen</a>
                     <form method="post" action="<?= e(url('/logout')) ?>">
                         <?= csrf_field() ?>
                         <button class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 active:bg-slate-700">Uitloggen</button>

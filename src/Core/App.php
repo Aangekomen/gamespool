@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace GamesPool\Core;
 
 use GamesPool\Controllers\AuthController;
+use GamesPool\Controllers\GameController;
 use GamesPool\Controllers\HomeController;
 
 class App
@@ -46,6 +47,14 @@ class App
         $r->get('/login',     [AuthController::class, 'showLogin']);
         $r->post('/login',    [AuthController::class, 'login']);
         $r->post('/logout',   [AuthController::class, 'logout']);
+
+        // Games
+        $r->get('/games',                 [GameController::class, 'index']);
+        $r->get('/games/new',             [GameController::class, 'create']);
+        $r->post('/games',                [GameController::class, 'store']);
+        $r->get('/games/{slug}/edit',     [GameController::class, 'edit']);
+        $r->patch('/games/{slug}',        [GameController::class, 'update']);
+        $r->delete('/games/{slug}',       [GameController::class, 'destroy']);
     }
 
     public function run(): void
