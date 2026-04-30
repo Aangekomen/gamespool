@@ -20,21 +20,35 @@ class ProfileController
     {
         Auth::requireLogin();
         $userId = (int) Auth::id();
-        $user   = Database::fetch(
-            'SELECT u.*, c.name AS company_name
-               FROM users u
-          LEFT JOIN companies c ON c.id = u.company_id
-              WHERE u.id = ?',
-            [$userId]
-        );
+        $user   = $this->loadUser($userId);
 
         return view('profile/index', [
             'user'          => $user,
             'stats'         => $this->stats($userId),
             'teams'         => Team::forUser($userId),
             'recentMatches' => GameMatch::recent(5, $userId),
-            'errors'        => Session::pull('_errors', []),
         ]);
+    }
+
+    public function settings(): string
+    {
+        Auth::requireLogin();
+        $userId = (int) Auth::id();
+        return view('profile/settings', [
+            'user'   => $this->loadUser($userId),
+            'errors' => Session::pull('_errors', []),
+        ]);
+    }
+
+    private function loadUser(int $userId): ?array
+    {
+        return Database::fetch(
+            'SELECT u.*, c.name AS company_name
+               FROM users u
+          LEFT JOIN companies c ON c.id = u.company_id
+              WHERE u.id = ?',
+            [$userId]
+        );
     }
 
     public function updateInfo(): void
@@ -62,7 +76,7 @@ class ProfileController
 
         if (!empty($errors)) {
             Session::flash('_errors', $errors);
-            redirect('/profile');
+            redirect('/profile/settings');
         }
 
         $companyId = null;
@@ -83,7 +97,7 @@ class ProfileController
             ]
         );
         Session::flash('_flash.success', 'Profiel bijgewerkt.');
-        redirect('/profile');
+        redirect('/profile/settings');
     }
 
     public function uploadAvatar(): void
@@ -94,7 +108,7 @@ class ProfileController
 
         if (empty($_FILES['avatar']['name'])) {
             Session::flash('_flash.error', 'Geen bestand geselecteerd.');
-            redirect('/profile');
+            redirect('/profile/settings');
         }
 
         $dir = BASE_PATH . '/public/uploads/' . trim((string) Config::get('uploads.avatars_dir', 'avatars'), '/');
@@ -104,13 +118,13 @@ class ProfileController
             $filename = ImageUpload::storeSquare($_FILES['avatar'], $dir, 256, $maxBytes);
         } catch (\Throwable $e) {
             Session::flash('_flash.error', $e->getMessage());
-            redirect('/profile');
+            redirect('/profile/settings');
         }
 
         ImageUpload::delete($dir, $user['avatar_path'] ?? null);
         Database::query('UPDATE users SET avatar_path = ? WHERE id = ?', [$filename, $userId]);
         Session::flash('_flash.success', 'Foto bijgewerkt.');
-        redirect('/profile');
+        redirect('/profile/settings');
     }
 
     public function changePassword(): void
@@ -134,7 +148,7 @@ class ProfileController
         }
         if (!empty($errors)) {
             Session::flash('_errors', $errors);
-            redirect('/profile');
+            redirect('/profile/settings');
         }
 
         Database::query(
@@ -142,7 +156,7 @@ class ProfileController
             [password_hash($new, PASSWORD_DEFAULT), $userId]
         );
         Session::flash('_flash.success', 'Wachtwoord gewijzigd.');
-        redirect('/profile');
+        redirect('/profile/settings');
     }
 
     public function deleteAccount(): void
@@ -152,7 +166,7 @@ class ProfileController
         $confirm = (string) ($_POST['confirm'] ?? '');
         if ($confirm !== 'VERWIJDER') {
             Session::flash('_flash.error', 'Type "VERWIJDER" om te bevestigen.');
-            redirect('/profile');
+            redirect('/profile/settings');
         }
 
         $user = Auth::user();

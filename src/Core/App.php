@@ -86,6 +86,7 @@ class App
 
         // Profile
         $r->get('/profile',           [ProfileController::class, 'index']);
+        $r->get('/profile/settings',  [ProfileController::class, 'settings']);
         $r->patch('/profile',         [ProfileController::class, 'updateInfo']);
         $r->post('/profile/avatar',   [ProfileController::class, 'uploadAvatar']);
         $r->post('/profile/password', [ProfileController::class, 'changePassword']);
