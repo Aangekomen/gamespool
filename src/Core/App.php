@@ -89,6 +89,7 @@ class App
 
         // Admin
         $r->get('/admin',                                 [AdminController::class, 'index']);
+        $r->get('/admin/users',                           [AdminController::class, 'usersIndex']);
         $r->get('/admin/devices',                         [AdminController::class, 'devicesIndex']);
         $r->get('/admin/devices/new',                     [AdminController::class, 'devicesNew']);
         $r->post('/admin/devices',                        [AdminController::class, 'devicesStore']);

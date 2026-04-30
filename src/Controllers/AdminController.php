@@ -26,6 +26,22 @@ class AdminController
         ]);
     }
 
+    public function usersIndex(): string
+    {
+        Admin::require();
+        $users = Database::fetchAll(
+            'SELECT u.id, u.email, u.display_name, u.first_name, u.last_name,
+                    u.is_admin, u.created_at, c.name AS company_name,
+                    (SELECT COUNT(*) FROM match_participants p
+                       JOIN matches m ON m.id = p.match_id
+                      WHERE p.user_id = u.id AND m.state = "completed") AS matches_played
+               FROM users u
+          LEFT JOIN companies c ON c.id = u.company_id
+              ORDER BY u.created_at DESC'
+        );
+        return view('admin/users/index', ['users' => $users]);
+    }
+
     public function devicesIndex(): string
     {
         Admin::require();
