@@ -185,6 +185,21 @@ class MatchController
             ? GameMatch::seriesSummary((string) $match['series_id'])
             : null;
 
+        // Lopende takeover-vraag? Naam ophalen voor de banner.
+        $takeover = null;
+        if (($match['takeover_status'] ?? null) === 'pending'
+            && !empty($match['takeover_requested_by'])) {
+            $by = Database::fetch(
+                'SELECT display_name, avatar_path FROM users WHERE id = ?',
+                [(int) $match['takeover_requested_by']]
+            );
+            $takeover = [
+                'name'   => (string) ($by['display_name'] ?? '?'),
+                'avatar' => $by['avatar_path'] ?? null,
+                'since'  => $match['takeover_requested_at'] ?? null,
+            ];
+        }
+
         return view('matches/show', [
             'match'          => $match,
             'game'           => $game,
@@ -192,6 +207,7 @@ class MatchController
             'h2h'            => $h2h,
             'pendingPreview' => $pendingPreview,
             'series'         => $series,
+            'takeover'       => $takeover,
         ]);
     }
 
@@ -415,6 +431,8 @@ class MatchController
                 'state'             => $current['state'],
                 'participant_count' => count($parts),
                 'pending_by'        => $current['pending_recorded_by'] ?? null,
+                'takeover_status'   => $current['takeover_status'] ?? null,
+                'takeover_by'       => $current['takeover_requested_by'] ?? null,
             ];
             $fp = md5(json_encode($snapshot));
             if ($fp !== $lastFingerprint) {
@@ -539,7 +557,14 @@ class MatchController
             if ($existing['state'] === 'waiting') {
                 redirect('/m/' . $existing['join_token']);
             }
-            // in_progress → can't start a new one
+            // in_progress: misschien zit een groep al een tijd te spelen.
+            // Na 5 min: vraag of ze nog doorgaan ("Speel je nog door?"-flow).
+            $startTs = strtotime((string) $existing['started_at']);
+            $minutesRunning = $startTs ? floor((time() - $startTs) / 60) : 0;
+            if ($minutesRunning >= 5 && (int) ($existing['created_by'] ?? 0) !== (int) Auth::id()) {
+                GameMatch::requestTakeover((int) $existing['id'], (int) Auth::id());
+                redirect('/m/' . $existing['join_token'] . '/wait');
+            }
             Session::flash('_flash.error', 'Op dit apparaat is al een match bezig.');
             redirect('/matches/' . $existing['id']);
         }
@@ -547,6 +572,96 @@ class MatchController
         $matchId = GameMatch::createWaiting($device, (int) Auth::id());
         $match = GameMatch::find($matchId);
         redirect('/m/' . $match['join_token']);
+    }
+
+    /**
+     * Wachtkamer voor de speler die wacht tot het apparaat vrijkomt.
+     * Toont de huidige spelers en hun reactie (still_playing / released).
+     */
+    public function takeoverWait(string $token): string
+    {
+        Auth::requireLogin();
+        $match = GameMatch::findByToken($token);
+        if (!$match) $this->notFound();
+
+        $game     = Game::find((int) $match['game_id']);
+        $device   = $match['device_id'] ? Device::find((int) $match['device_id']) : null;
+        $parts    = GameMatch::participants((int) $match['id']);
+        $startTs  = strtotime((string) $match['started_at']);
+        $minutesRunning = $startTs ? floor((time() - $startTs) / 60) : 0;
+
+        return view('matches/takeover_wait', [
+            'match'          => $match,
+            'game'           => $game,
+            'device'         => $device,
+            'participants'   => $parts,
+            'minutesRunning' => $minutesRunning,
+        ]);
+    }
+
+    /** JSON-snapshot voor de wachtkamer-poll. */
+    public function takeoverState(string $token): void
+    {
+        Auth::requireLogin();
+        $match = GameMatch::findByToken($token);
+        header('Content-Type: application/json');
+        if (!$match) { echo json_encode(['ok' => false]); return; }
+        echo json_encode([
+            'ok'              => true,
+            'state'           => $match['state'],
+            'takeover_status' => $match['takeover_status'] ?? null,
+            'device_id'       => (int) ($match['device_id'] ?? 0),
+        ]);
+    }
+
+    /**
+     * Huidige speler reageert op de takeover-vraag.
+     * POST body: response = 'still_playing' | 'released'
+     */
+    public function takeoverRespond(string $id): void
+    {
+        Auth::requireLogin();
+        $match = GameMatch::find((int) $id) ?? $this->notFound();
+        $userId = (int) Auth::id();
+        $isParticipant = false;
+        foreach (GameMatch::participants((int) $match['id']) as $p) {
+            if ((int) ($p['user_id'] ?? 0) === $userId) { $isParticipant = true; break; }
+        }
+        if (!$isParticipant) {
+            Session::flash('_flash.error', 'Alleen huidige spelers kunnen reageren.');
+            redirect('/matches/' . $match['id']);
+        }
+        $response = (string) ($_POST['response'] ?? '');
+        GameMatch::respondTakeover((int) $match['id'], $userId, $response);
+        Session::flash('_flash.success', $response === 'released'
+            ? 'Tafel vrijgegeven.'
+            : 'Bedankt — we laten de wachtende speler weten dat je doorspeelt.');
+        redirect('/matches/' . $match['id']);
+    }
+
+    /**
+     * Wachtende speler claimt vrijgegeven tafel: maak nieuwe waiting-match.
+     */
+    public function takeoverClaim(string $token): void
+    {
+        Auth::requireLogin();
+        $oldMatch = GameMatch::findByToken($token);
+        if (!$oldMatch || empty($oldMatch['device_id'])) $this->notFound();
+        if (($oldMatch['takeover_status'] ?? null) !== 'released') {
+            Session::flash('_flash.error', 'De tafel is nog niet vrijgegeven.');
+            redirect('/m/' . $token . '/wait');
+        }
+        // Andere actieve match? Dan was iemand anders sneller.
+        $busy = GameMatch::activeForDevice((int) $oldMatch['device_id']);
+        if ($busy) {
+            Session::flash('_flash.error', 'Iemand anders heeft de tafel net geclaimd.');
+            redirect('/matches/' . $busy['id']);
+        }
+        $device = Device::find((int) $oldMatch['device_id']);
+        if (!$device) $this->notFound();
+        $matchId = GameMatch::createWaiting($device, (int) Auth::id());
+        $newMatch = GameMatch::find($matchId);
+        redirect('/m/' . $newMatch['join_token']);
     }
 
     /**

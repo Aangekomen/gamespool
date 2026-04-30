@@ -123,6 +123,10 @@ class App
         $r->get('/m/{token}/state.json',  [MatchController::class, 'lobbyState']);
         $r->get('/m/{token}/events',      [MatchController::class, 'matchStream']);
         $r->post('/m/{token}/accept',     [MatchController::class, 'acceptLobby']);
+        $r->get('/m/{token}/wait',        [MatchController::class, 'takeoverWait']);
+        $r->get('/m/{token}/wait.json',   [MatchController::class, 'takeoverState']);
+        $r->post('/m/{token}/claim',      [MatchController::class, 'takeoverClaim']);
+        $r->post('/matches/{id}/takeover',[MatchController::class, 'takeoverRespond']);
         $r->get('/qr.svg',                [QrController::class,    'svg']);
         $r->get('/scan',                  [MatchController::class, 'scanPage']);
 

@@ -390,6 +390,67 @@ class GameMatch
         Database::query('DELETE FROM matches WHERE id = ?', [$matchId]);
     }
 
+    /**
+     * Iemand scant een bezette tafel: vraag de huidige spelers of ze
+     * doorgaan. Geen actie als er al een open verzoek of een nieuw verzoek
+     * binnen 2 min is gedaan (anti-spam).
+     *
+     * Levert true als het verzoek geregistreerd is.
+     */
+    public static function requestTakeover(int $matchId, int $byUserId): bool
+    {
+        $row = Database::fetch(
+            'SELECT takeover_status, takeover_responded_at FROM matches WHERE id = ?',
+            [$matchId]
+        );
+        if (!$row) return false;
+        // Pending verzoek staat nog open
+        if ($row['takeover_status'] === 'pending') return false;
+        // Net (binnen 2 min) al een reactie geweest? Niet opnieuw spammen.
+        if (!empty($row['takeover_responded_at'])
+            && strtotime((string) $row['takeover_responded_at']) > time() - 120) {
+            return false;
+        }
+        Database::query(
+            "UPDATE matches
+                SET takeover_requested_by = ?, takeover_requested_at = NOW(),
+                    takeover_status = 'pending',
+                    takeover_responded_at = NULL, takeover_response_by = NULL
+              WHERE id = ?",
+            [$byUserId, $matchId]
+        );
+
+        // Push naar huidige deelnemers — verzoek is dringend
+        $by = Database::fetch('SELECT display_name FROM users WHERE id = ?', [$byUserId]);
+        $byName = (string) ($by['display_name'] ?? 'Iemand');
+        foreach (self::participants($matchId) as $p) {
+            if ((int) ($p['user_id'] ?? 0) === $byUserId) continue;
+            \GamesPool\Core\Push::sendToUser(
+                (int) $p['user_id'],
+                'Speel je nog door?',
+                $byName . ' wil ook spelen op deze tafel — geef je vrij of speel je door?',
+                '/matches/' . $matchId
+            );
+        }
+        return true;
+    }
+
+    /** Huidige speler reageert: 'still_playing' of 'released'. */
+    public static function respondTakeover(int $matchId, int $byUserId, string $response): void
+    {
+        if (!in_array($response, ['still_playing', 'released'], true)) return;
+        Database::query(
+            "UPDATE matches
+                SET takeover_status = ?, takeover_responded_at = NOW(), takeover_response_by = ?
+              WHERE id = ? AND takeover_status = 'pending'",
+            [$response, $byUserId, $matchId]
+        );
+        if ($response === 'released') {
+            // Match netjes afsluiten zodat het apparaat vrijkomt
+            self::cancel($matchId);
+        }
+    }
+
     public static function cancel(int $matchId): void
     {
         Database::query(

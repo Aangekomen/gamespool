@@ -6,6 +6,7 @@
 /** @var ?array $h2h */
 /** @var ?array $pendingPreview */
 /** @var ?array $series */
+/** @var ?array $takeover */
 use GamesPool\Models\Game;
 $title = 'Match';
 $type  = $game['score_type'] ?? 'win_loss';
@@ -34,6 +35,54 @@ $type  = $game['score_type'] ?? 'win_loss';
             <?= e($stateBadge[0]) ?>
         </span>
     </div>
+
+    <?php if (!empty($takeover) && in_array($match['state'], ['in_progress', 'pending_confirmation'], true)):
+        $myId = (int) (user()['id'] ?? 0);
+        $isParticipant = false;
+        foreach ($participants as $p) if ((int) ($p['user_id'] ?? 0) === $myId) { $isParticipant = true; break; }
+    ?>
+        <div class="mb-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700 p-4 shadow-card">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-12 h-12 rounded-full bg-amber-200 dark:bg-amber-900/40 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
+                    <?php if (!empty($takeover['avatar'])): ?>
+                        <img src="<?= e(url('/uploads/avatars/' . $takeover['avatar'])) ?>" alt="" class="w-full h-full object-cover">
+                    <?php else: ?>
+                        <span>👋</span>
+                    <?php endif; ?>
+                </div>
+                <div class="min-w-0">
+                    <p class="text-xs uppercase tracking-wide font-bold text-amber-800 dark:text-amber-300">Wachtende speler</p>
+                    <p class="text-base font-bold text-amber-900 dark:text-amber-100 truncate">
+                        <?= e((string) $takeover['name']) ?> wil ook spelen
+                    </p>
+                </div>
+            </div>
+            <p class="text-sm text-amber-900 dark:text-amber-100 mb-3">
+                Spelen jullie nog door, of geven jullie de tafel vrij?
+            </p>
+            <?php if ($isParticipant): ?>
+                <div class="grid grid-cols-2 gap-2">
+                    <form method="post" action="<?= e(url('/matches/' . $match['id'] . '/takeover')) ?>">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="response" value="still_playing">
+                        <button class="w-full rounded-lg bg-amber-600 text-white font-semibold py-2.5 hover:bg-amber-700">
+                            We spelen door
+                        </button>
+                    </form>
+                    <form method="post" action="<?= e(url('/matches/' . $match['id'] . '/takeover')) ?>"
+                          onsubmit="return confirm('Match afsluiten zodat de tafel vrij komt?');">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="response" value="released">
+                        <button class="w-full rounded-lg bg-white dark:bg-slate-900 border border-amber-300 text-amber-900 dark:text-amber-200 font-semibold py-2.5 hover:bg-amber-100">
+                            Wij zijn klaar
+                        </button>
+                    </form>
+                </div>
+            <?php else: ?>
+                <p class="text-xs text-amber-800 dark:text-amber-300">Alleen de huidige spelers kunnen reageren.</p>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <?php if ($match['state'] === 'pending_confirmation' && !empty($pendingPreview)):
         $myId = (int) (user()['id'] ?? 0);
@@ -297,18 +346,24 @@ $type  = $game['score_type'] ?? 'win_loss';
 
 <?php if (in_array($match['state'], ['in_progress', 'pending_confirmation'], true)): ?>
 <script>
-// Realtime: bij state-wisseling herladen — gebruikt SSE, valt terug op niets
-// (we wachten gewoon op de volgende user-actie als SSE niet werkt).
+// Realtime: herlaad bij elke betekenisvolle change in match-state of
+// takeover-status. Gebruikt SSE; valt geruisloos terug op niets als de
+// browser het niet aankan.
 (function () {
     if (!('EventSource' in window)) return;
     const url = <?= json_encode(url('/m/' . $match['join_token'] . '/events')) ?>;
-    const initialState = <?= json_encode($match['state']) ?>;
+    const initial = {
+        state:    <?= json_encode($match['state']) ?>,
+        takeover: <?= json_encode($match['takeover_status'] ?? null) ?>,
+    };
     try {
         const es = new EventSource(url);
         es.addEventListener('snapshot', (ev) => {
             try {
                 const snap = JSON.parse(ev.data);
-                if (snap.state && snap.state !== initialState) { es.close(); location.reload(); }
+                const changed = (snap.state && snap.state !== initial.state)
+                             || ((snap.takeover_status ?? null) !== initial.takeover);
+                if (changed) { es.close(); location.reload(); }
             } catch (e) {}
         });
         es.onerror = () => es.close();
