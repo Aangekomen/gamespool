@@ -9,6 +9,7 @@ use GamesPool\Controllers\GameController;
 use GamesPool\Controllers\HomeController;
 use GamesPool\Controllers\LeaderboardController;
 use GamesPool\Controllers\MatchController;
+use GamesPool\Controllers\ProfileController;
 use GamesPool\Controllers\QrController;
 use GamesPool\Controllers\TeamController;
 
@@ -82,6 +83,13 @@ class App
         $r->post('/teams/{id}/leave',                           [TeamController::class, 'leave']);
         $r->post('/teams/{teamId}/members/{userId}/approve',    [TeamController::class, 'approve']);
         $r->post('/teams/{teamId}/members/{userId}/reject',     [TeamController::class, 'reject']);
+
+        // Profile
+        $r->get('/profile',           [ProfileController::class, 'index']);
+        $r->patch('/profile',         [ProfileController::class, 'updateInfo']);
+        $r->post('/profile/avatar',   [ProfileController::class, 'uploadAvatar']);
+        $r->post('/profile/password', [ProfileController::class, 'changePassword']);
+        $r->post('/profile/delete',   [ProfileController::class, 'deleteAccount']);
 
         // QR / device match flow
         $r->get('/d/{code}',              [MatchController::class, 'scanDevice']);

@@ -19,13 +19,13 @@ $title = $device['name'];
         </p>
     </div>
 
-    <div class="mt-4 rounded-2xl bg-white border border-slate-200 p-5 shadow-card text-center">
-        <h2 class="text-sm font-bold text-navy mb-3">QR-code</h2>
-        <div class="bg-white inline-block rounded-xl border border-slate-200 p-2">
+    <div class="mt-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-card text-center">
+        <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-3">QR-code</h2>
+        <div class="bg-white dark:bg-slate-900 inline-block rounded-xl border border-slate-200 dark:border-slate-800 p-2">
             <img src="<?= e(url('/qr.svg?text=' . urlencode($qrUrl) . '&size=240')) ?>"
                  alt="QR voor <?= e($device['name']) ?>" width="240" height="240" class="block">
         </div>
-        <p class="mt-3 text-xs font-mono text-slate-500 break-all"><?= e($qrUrl) ?></p>
+        <p class="mt-3 text-xs font-mono text-slate-500 dark:text-slate-400 break-all"><?= e($qrUrl) ?></p>
         <a href="<?= e(url('/admin/devices/' . $device['id'] . '/print')) ?>" target="_blank"
            class="inline-block mt-4 px-4 py-2 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">
             🖨 Printvriendelijk openen
@@ -34,7 +34,7 @@ $title = $device['name'];
 
     <div class="grid grid-cols-2 gap-2 mt-3">
         <a href="<?= e(url('/admin/devices/' . $device['id'] . '/edit')) ?>"
-           class="text-center rounded-lg bg-white border border-slate-200 px-4 py-2.5 text-navy hover:bg-slate-50">Bewerken</a>
+           class="text-center rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-navy dark:text-slate-100 hover:bg-slate-50">Bewerken</a>
         <form method="post" action="<?= e(url('/admin/devices/' . $device['id'])) ?>"
               onsubmit="return confirm('Apparaat verwijderen?');">
             <?= csrf_field() ?>
@@ -43,5 +43,5 @@ $title = $device['name'];
         </form>
     </div>
 
-    <a href="<?= e(url('/admin/devices')) ?>" class="inline-block mt-6 text-sm text-slate-500 hover:text-navy">← terug</a>
+    <a href="<?= e(url('/admin/devices')) ?>" class="inline-block mt-6 text-sm text-slate-500 dark:text-slate-400 hover:text-navy">← terug</a>
 </div>

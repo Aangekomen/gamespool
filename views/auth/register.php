@@ -1,18 +1,18 @@
 <?php \GamesPool\Core\View::extend('layouts/app'); ?>
 <?php $title = 'Account aanmaken'; /** @var array $errors */
-$inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand';
+$inputCls = 'w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand';
 ?>
 
 <div class="max-w-md mx-auto">
-    <h1 class="text-2xl font-bold text-navy mb-1">Account aanmaken</h1>
-    <p class="text-slate-500 text-sm mb-6">Doe mee aan competities en houd je scores bij.</p>
+    <h1 class="text-2xl font-bold text-navy dark:text-slate-100 mb-1">Account aanmaken</h1>
+    <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">Doe mee aan competities en houd je scores bij.</p>
 
-    <form method="post" action="<?= e(url('/register')) ?>" class="space-y-4 bg-white p-5 rounded-xl border border-slate-200 shadow-card" novalidate>
+    <form method="post" action="<?= e(url('/register')) ?>" class="space-y-4 bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card" novalidate>
         <?= csrf_field() ?>
 
         <div class="grid grid-cols-2 gap-3">
             <div>
-                <label class="block text-sm font-medium text-navy mb-1.5" for="first_name">Voornaam</label>
+                <label class="block text-sm font-medium text-navy dark:text-slate-100 mb-1.5" for="first_name">Voornaam</label>
                 <input id="first_name" name="first_name" type="text" autocomplete="given-name"
                        value="<?= e((string) old('first_name')) ?>" required minlength="2" maxlength="80"
                        class="<?= $inputCls ?>">
@@ -21,7 +21,7 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
                 <?php endforeach; ?>
             </div>
             <div>
-                <label class="block text-sm font-medium text-navy mb-1.5" for="last_name">Achternaam</label>
+                <label class="block text-sm font-medium text-navy dark:text-slate-100 mb-1.5" for="last_name">Achternaam</label>
                 <input id="last_name" name="last_name" type="text" autocomplete="family-name"
                        value="<?= e((string) old('last_name')) ?>" required minlength="2" maxlength="80"
                        class="<?= $inputCls ?>">
@@ -32,7 +32,7 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-navy mb-1.5" for="email">E-mail</label>
+            <label class="block text-sm font-medium text-navy dark:text-slate-100 mb-1.5" for="email">E-mail</label>
             <input id="email" name="email" type="email" inputmode="email" autocomplete="email"
                    value="<?= e((string) old('email')) ?>" required maxlength="190"
                    class="<?= $inputCls ?>">
@@ -42,20 +42,20 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-navy mb-1.5" for="company">
+            <label class="block text-sm font-medium text-navy dark:text-slate-100 mb-1.5" for="company">
                 Bedrijfsnaam <span class="text-slate-400">(optioneel)</span>
             </label>
             <input id="company" name="company" type="text" autocomplete="organization" maxlength="150"
                    value="<?= e((string) old('company')) ?>"
                    class="<?= $inputCls ?>">
-            <p class="text-xs text-slate-500 mt-1">Bestaat het bedrijf al, dan word je aan dezelfde organisatie gekoppeld.</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Bestaat het bedrijf al, dan word je aan dezelfde organisatie gekoppeld.</p>
             <?php foreach (($errors['company'] ?? []) as $err): ?>
                 <p class="text-red-600 text-sm mt-1"><?= e($err) ?></p>
             <?php endforeach; ?>
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-navy mb-1.5" for="password">Wachtwoord</label>
+            <label class="block text-sm font-medium text-navy dark:text-slate-100 mb-1.5" for="password">Wachtwoord</label>
             <input id="password" name="password" type="password" autocomplete="new-password"
                    required minlength="8"
                    class="<?= $inputCls ?>">
@@ -65,7 +65,7 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
         </div>
 
         <div>
-            <label class="block text-sm font-medium text-navy mb-1.5" for="password_confirmation">Wachtwoord herhalen</label>
+            <label class="block text-sm font-medium text-navy dark:text-slate-100 mb-1.5" for="password_confirmation">Wachtwoord herhalen</label>
             <input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password"
                    required minlength="8"
                    class="<?= $inputCls ?>">
@@ -75,7 +75,7 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
             Account aanmaken
         </button>
 
-        <p class="text-sm text-slate-500 text-center">
+        <p class="text-sm text-slate-500 dark:text-slate-400 text-center">
             Al een account? <a href="<?= e(url('/login')) ?>" class="text-brand-dark font-medium hover:underline">Inloggen</a>
         </p>
     </form>

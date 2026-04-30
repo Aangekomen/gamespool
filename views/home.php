@@ -12,13 +12,13 @@ $title = 'GamesPool';
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-navy mb-4 relative">
             <div class="absolute inset-3 rounded-lg bg-brand"></div>
         </div>
-        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-navy">Houd je scores bij voor elk spel</h1>
-        <p class="mt-3 text-slate-600 max-w-xl mx-auto">
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-navy dark:text-slate-100">Houd je scores bij voor elk spel</h1>
+        <p class="mt-3 text-slate-600 dark:text-slate-300 max-w-xl mx-auto">
             Pool, darts, en alles wat je in de bar speelt. Maak teams, start competities, scan een QR en je doet mee.
         </p>
         <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
             <a href="<?= e(url('/register')) ?>" class="inline-flex justify-center items-center px-5 py-3 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Account aanmaken</a>
-            <a href="<?= e(url('/login')) ?>" class="inline-flex justify-center items-center px-5 py-3 rounded-lg bg-white border border-slate-200 text-navy hover:bg-slate-50">Inloggen</a>
+            <a href="<?= e(url('/login')) ?>" class="inline-flex justify-center items-center px-5 py-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-navy dark:text-slate-100 hover:bg-slate-50">Inloggen</a>
         </div>
     </section>
 
@@ -34,8 +34,8 @@ $title = 'GamesPool';
 ?>
     <!-- Greeting -->
     <div class="mb-4">
-        <p class="text-slate-500 text-sm"><?= e($greet) ?>, <span class="inline-block">👋</span></p>
-        <h1 class="text-2xl font-bold text-navy"><?= e($name) ?></h1>
+        <p class="text-slate-500 dark:text-slate-400 text-sm"><?= e($greet) ?>, <span class="inline-block">👋</span></p>
+        <h1 class="text-2xl font-bold text-navy dark:text-slate-100"><?= e($name) ?></h1>
     </div>
 
     <!-- Hero stat card -->
@@ -87,12 +87,12 @@ $title = 'GamesPool';
 
     <!-- Quick start per game -->
     <?php if (!empty($games)): ?>
-        <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-card mb-4">
-            <h3 class="text-sm font-bold text-navy mb-3">Snel starten</h3>
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-4">
+            <h3 class="text-sm font-bold text-navy dark:text-slate-100 mb-3">Snel starten</h3>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <?php foreach ($games as $g): ?>
                     <a href="<?= e(url('/matches/new?game_id=' . (int) $g['id'])) ?>"
-                       class="rounded-lg bg-surface border border-slate-200 px-3 py-2.5 text-sm font-medium text-navy hover:border-brand hover:bg-brand-light transition">
+                       class="rounded-lg bg-surface dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-3 py-2.5 text-sm font-medium text-navy dark:text-slate-100 hover:border-brand hover:bg-brand-light transition">
                         <?= e($g['name']) ?>
                     </a>
                 <?php endforeach; ?>
@@ -103,12 +103,12 @@ $title = 'GamesPool';
     <!-- Two stat cards -->
     <div class="grid grid-cols-2 gap-3 mb-4">
         <a href="<?= e(url('/leaderboard?period=week')) ?>"
-           class="rounded-2xl bg-white border border-slate-200 p-4 shadow-card hover:border-brand transition">
+           class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card hover:border-brand transition">
             <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-xs text-slate-500 font-medium">Deze week</p>
-                    <p class="text-3xl font-bold text-navy mt-1"><?= (int) $stats['week_matches'] ?></p>
-                    <p class="text-xs text-slate-500">matches</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Deze week</p>
+                    <p class="text-3xl font-bold text-navy dark:text-slate-100 mt-1"><?= (int) $stats['week_matches'] ?></p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">matches</p>
                 </div>
                 <span class="w-9 h-9 rounded-lg bg-brand-light flex items-center justify-center text-brand-dark">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12h18M3 6h18M3 18h18"/></svg>
@@ -116,14 +116,14 @@ $title = 'GamesPool';
             </div>
         </a>
         <a href="<?= e(url('/leaderboard')) ?>"
-           class="rounded-2xl bg-white border border-slate-200 p-4 shadow-card hover:border-brand transition">
+           class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card hover:border-brand transition">
             <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-xs text-slate-500 font-medium">Mijn rang</p>
-                    <p class="text-3xl font-bold text-navy mt-1">
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Mijn rang</p>
+                    <p class="text-3xl font-bold text-navy dark:text-slate-100 mt-1">
                         <?= $stats['rank'] !== null ? '#' . (int) $stats['rank'] : '–' ?>
                     </p>
-                    <p class="text-xs text-slate-500">
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
                         <?= $stats['rank'] !== null ? 'van ' . (int) $stats['total_ranked'] : 'speel een match' ?>
                     </p>
                 </div>
@@ -135,24 +135,24 @@ $title = 'GamesPool';
     </div>
 
     <!-- Recent matches -->
-    <div class="rounded-2xl bg-white border border-slate-200 p-4 shadow-card">
+    <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card">
         <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-bold text-navy">Recente matches</h3>
+            <h3 class="text-sm font-bold text-navy dark:text-slate-100">Recente matches</h3>
             <a href="<?= e(url('/matches')) ?>" class="text-xs text-brand-dark font-semibold hover:underline">Alle →</a>
         </div>
         <?php if (empty($recentMatches)): ?>
-            <p class="text-sm text-slate-500 text-center py-6">Nog geen matches gespeeld.<br>Tik <em>+ Start nieuwe match</em> om te beginnen.</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 text-center py-6">Nog geen matches gespeeld.<br>Tik <em>+ Start nieuwe match</em> om te beginnen.</p>
         <?php else: ?>
-            <ul class="divide-y divide-slate-100">
+            <ul class="divide-y divide-slate-100 dark:divide-slate-800">
                 <?php foreach ($recentMatches as $m): ?>
                     <li>
                         <a href="<?= e(url('/matches/' . $m['id'])) ?>" class="flex items-center justify-between py-2.5 hover:bg-slate-50 -mx-2 px-2 rounded-md">
                             <div class="min-w-0">
-                                <p class="text-sm font-semibold text-navy truncate"><?= e($m['game_name']) ?><?= $m['label'] ? ' · ' . e($m['label']) : '' ?></p>
-                                <p class="text-xs text-slate-500"><?= e(date('d-m H:i', strtotime((string) $m['started_at']))) ?></p>
+                                <p class="text-sm font-semibold text-navy dark:text-slate-100 truncate"><?= e($m['game_name']) ?><?= $m['label'] ? ' · ' . e($m['label']) : '' ?></p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400"><?= e(date('d-m H:i', strtotime((string) $m['started_at']))) ?></p>
                             </div>
                             <span class="shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full
-                                <?= $m['state'] === 'in_progress' ? 'bg-amber-100 text-amber-800' : ($m['state'] === 'completed' ? 'bg-brand-light text-brand-dark' : 'bg-slate-100 text-slate-600') ?>">
+                                <?= $m['state'] === 'in_progress' ? 'bg-amber-100 text-amber-800' : ($m['state'] === 'completed' ? 'bg-brand-light text-brand-dark' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300') ?>">
                                 <?= $m['state'] === 'in_progress' ? 'Bezig' : ($m['state'] === 'completed' ? 'Klaar' : 'Geannuleerd') ?>
                             </span>
                         </a>

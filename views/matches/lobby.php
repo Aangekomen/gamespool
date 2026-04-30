@@ -26,28 +26,28 @@ $shareText = 'Speel je een potje ' . ($game['name'] ?? '') . ' met me? ' . $shar
     </div>
 
     <!-- Participants -->
-    <div class="mt-4 rounded-2xl bg-white border border-slate-200 p-4 shadow-card">
-        <h2 class="text-sm font-bold text-navy mb-3">Deelnemers</h2>
+    <div class="mt-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card">
+        <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-3">Deelnemers</h2>
         <ul class="space-y-2">
             <?php foreach ($participants as $i => $p):
                 $name = $p['display_name'] ?? 'Onbekend';
             ?>
-                <li class="flex items-center gap-3 rounded-lg bg-surface px-3 py-2.5">
+                <li class="flex items-center gap-3 rounded-lg bg-surface dark:bg-slate-950 px-3 py-2.5">
                     <div class="w-9 h-9 rounded-full bg-brand-light text-brand-dark flex items-center justify-center font-bold shrink-0">
                         <?= e(strtoupper(mb_substr($name, 0, 1))) ?>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-navy truncate"><?= e($name) ?></p>
-                        <p class="text-xs text-slate-500"><?= $i === 0 ? 'host' : 'tegenstander' ?></p>
+                        <p class="font-semibold text-navy dark:text-slate-100 truncate"><?= e($name) ?></p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400"><?= $i === 0 ? 'host' : 'tegenstander' ?></p>
                     </div>
                     <span class="text-[10px] uppercase tracking-wide font-semibold text-brand-dark bg-brand-light px-2 py-0.5 rounded-full">✓</span>
                 </li>
             <?php endforeach; ?>
 
             <?php if (count($participants) < 2): ?>
-                <li class="flex items-center gap-3 rounded-lg border-2 border-dashed border-slate-200 px-3 py-3">
-                    <div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">?</div>
-                    <p class="text-sm text-slate-500">Wachten op tegenstander…</p>
+                <li class="flex items-center gap-3 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-800 px-3 py-3">
+                    <div class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 shrink-0">?</div>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Wachten op tegenstander…</p>
                 </li>
             <?php endif; ?>
         </ul>
@@ -61,23 +61,23 @@ $shareText = 'Speel je een potje ' . ($game['name'] ?? '') . ' met me? ' . $shar
                 ✓ Ik doe mee
             </button>
         </form>
-        <p class="text-xs text-slate-500 text-center mt-2">
+        <p class="text-xs text-slate-500 dark:text-slate-400 text-center mt-2">
             Door mee te doen wordt de match vergrendeld en starten we direct.
         </p>
 
     <?php elseif ($isHost && count($participants) < 2): ?>
         <!-- Host waiting: share screen -->
-        <div class="mt-4 rounded-2xl bg-white border border-slate-200 p-5 shadow-card text-center">
-            <h2 class="text-sm font-bold text-navy mb-2">Deel deze link</h2>
-            <p class="text-xs text-slate-500 mb-4">Of laat de tegenstander de QR-code scannen.</p>
+        <div class="mt-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-card text-center">
+            <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-2">Deel deze link</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Of laat de tegenstander de QR-code scannen.</p>
 
-            <div class="bg-white inline-block rounded-xl border border-slate-200 p-2 mb-3">
+            <div class="bg-white dark:bg-slate-900 inline-block rounded-xl border border-slate-200 dark:border-slate-800 p-2 mb-3">
                 <img src="<?= e(url('/qr.svg?text=' . urlencode($shareUrl) . '&size=240')) ?>"
                      alt="QR" width="220" height="220" class="block">
             </div>
 
             <input type="text" readonly id="shareLink" value="<?= e($shareUrl) ?>"
-                   class="w-full rounded-lg bg-surface border border-slate-300 px-3 py-2.5 text-sm font-mono text-navy text-center mb-3"
+                   class="w-full rounded-lg bg-surface dark:bg-slate-950 border border-slate-300 dark:border-slate-700 px-3 py-2.5 text-sm font-mono text-navy dark:text-slate-100 text-center mb-3"
                    onclick="this.select()">
 
             <button type="button" id="shareBtn"
@@ -90,11 +90,11 @@ $shareText = 'Speel je een potje ' . ($game['name'] ?? '') . ' met me? ' . $shar
                     WhatsApp
                 </a>
                 <a href="mailto:?subject=<?= e(urlencode('Speel je mee?')) ?>&body=<?= e(urlencode($shareText)) ?>"
-                   class="min-h-[44px] rounded-lg bg-slate-100 text-navy font-semibold hover:bg-slate-200 flex items-center justify-center text-sm">
+                   class="min-h-[44px] rounded-lg bg-slate-100 dark:bg-slate-800 text-navy dark:text-slate-100 font-semibold hover:bg-slate-200 flex items-center justify-center text-sm">
                     Mail
                 </a>
                 <button type="button" id="copyBtn"
-                        class="min-h-[44px] rounded-lg bg-slate-100 text-navy font-semibold hover:bg-slate-200 text-sm">
+                        class="min-h-[44px] rounded-lg bg-slate-100 dark:bg-slate-800 text-navy dark:text-slate-100 font-semibold hover:bg-slate-200 text-sm">
                     Kopieer
                 </button>
             </div>
@@ -103,7 +103,7 @@ $shareText = 'Speel je een potje ' . ($game['name'] ?? '') . ' met me? ' . $shar
         <form method="post" action="<?= e(url('/matches/' . $match['id'] . '/cancel')) ?>"
               onsubmit="return confirm('Match annuleren?');" class="mt-3">
             <?= csrf_field() ?>
-            <button class="w-full px-4 py-3 rounded-lg bg-white border border-slate-200 hover:bg-red-50 hover:text-red-700 text-slate-600">
+            <button class="w-full px-4 py-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-red-50 hover:text-red-700 text-slate-600 dark:text-slate-300">
                 Annuleer match
             </button>
         </form>

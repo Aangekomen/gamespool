@@ -8,28 +8,28 @@ $title = 'Teams';
 ?>
 
 <div class="mb-4">
-    <h1 class="text-2xl font-bold text-navy">Teams</h1>
-    <p class="text-slate-500 text-sm">Sluit aan bij een bestaand team of begin er zelf een.</p>
+    <h1 class="text-2xl font-bold text-navy dark:text-slate-100">Teams</h1>
+    <p class="text-slate-500 dark:text-slate-400 text-sm">Sluit aan bij een bestaand team of begin er zelf een.</p>
 </div>
 
 <!-- Two big choice cards -->
 <div class="grid sm:grid-cols-2 gap-3 mb-6">
     <a href="<?= e(url('/teams/join')) ?>"
-       class="block rounded-2xl bg-white border border-slate-200 p-5 shadow-card hover:border-brand transition">
+       class="block rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-card hover:border-brand transition">
         <div class="w-10 h-10 rounded-lg bg-brand-light text-brand-dark flex items-center justify-center mb-3">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 11l2 2-2 2m-7-2h9M5 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3"/></svg>
         </div>
-        <p class="font-bold text-navy text-base">Word lid van een bestaand team</p>
-        <p class="text-sm text-slate-500 mt-1">Vraag de captain om de 6-cijferige code en vul hem in.</p>
+        <p class="font-bold text-navy dark:text-slate-100 text-base">Word lid van een bestaand team</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Vraag de captain om de 6-cijferige code en vul hem in.</p>
     </a>
 
     <a href="<?= e(url('/teams/new')) ?>"
-       class="block rounded-2xl bg-white border border-slate-200 p-5 shadow-card hover:border-brand transition">
+       class="block rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-card hover:border-brand transition">
         <div class="w-10 h-10 rounded-lg bg-brand-light text-brand-dark flex items-center justify-center mb-3">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
         </div>
-        <p class="font-bold text-navy text-base">Maak een nieuw team aan</p>
-        <p class="text-sm text-slate-500 mt-1">Start zelf een team — anderen sluiten aan met jouw code.</p>
+        <p class="font-bold text-navy dark:text-slate-100 text-base">Maak een nieuw team aan</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Start zelf een team — anderen sluiten aan met jouw code.</p>
     </a>
 </div>
 
@@ -50,10 +50,10 @@ $title = 'Teams';
 
 <!-- My teams -->
 <div>
-    <h2 class="text-sm font-bold text-navy mb-2 px-1">Mijn teams</h2>
+    <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-2 px-1">Mijn teams</h2>
     <?php if (empty($teams)): ?>
-        <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
-            <p class="text-slate-500 text-sm">Je zit nog in geen enkel team.</p>
+        <div class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center">
+            <p class="text-slate-500 dark:text-slate-400 text-sm">Je zit nog in geen enkel team.</p>
         </div>
     <?php else: ?>
         <ul class="space-y-3">
@@ -62,7 +62,7 @@ $title = 'Teams';
                 $isCaptain = $t['role'] === 'captain';
                 $pending = $pendingPerTeam[(int) $t['id']] ?? [];
             ?>
-                <li class="rounded-xl border border-slate-200 bg-white shadow-card overflow-hidden">
+                <li class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-card overflow-hidden">
                     <div class="flex items-center gap-3 px-4 py-3">
                         <div class="w-10 h-10 rounded-lg bg-brand-light text-brand-dark flex items-center justify-center font-bold shrink-0 overflow-hidden">
                             <?php if (!empty($t['logo_path'])): ?>
@@ -72,20 +72,20 @@ $title = 'Teams';
                             <?php endif; ?>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="font-semibold text-navy truncate"><?= e($t['name']) ?>
+                            <p class="font-semibold text-navy dark:text-slate-100 truncate"><?= e($t['name']) ?>
                                 <?php if ($isCaptain): ?>
                                     <span class="ml-1 text-[10px] uppercase tracking-wide text-brand-dark bg-brand-light px-1.5 py-0.5 rounded">captain</span>
                                 <?php endif; ?>
                             </p>
-                            <p class="text-xs text-slate-500">
+                            <p class="text-xs text-slate-500 dark:text-slate-400">
                                 <?= $count ?> <?= $count === 1 ? 'lid' : 'leden' ?>
-                                · Code: <span class="font-mono font-semibold tracking-wider text-navy"><?= e((string) $t['join_code']) ?></span>
+                                · Code: <span class="font-mono font-semibold tracking-wider text-navy dark:text-slate-100"><?= e((string) $t['join_code']) ?></span>
                             </p>
                         </div>
                         <form method="post" action="<?= e(url('/teams/' . (int) $t['id'] . '/leave')) ?>"
                               onsubmit="return confirm('Team <?= e($t['name']) ?> verlaten?');">
                             <?= csrf_field() ?>
-                            <button class="min-h-[36px] text-xs px-3 rounded-md bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-500">Verlaat</button>
+                            <button class="min-h-[36px] text-xs px-3 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-red-50 hover:text-red-700 text-slate-500 dark:text-slate-400">Verlaat</button>
                         </form>
                     </div>
 
@@ -97,7 +97,7 @@ $title = 'Teams';
                             <ul class="space-y-2">
                                 <?php foreach ($pending as $req): ?>
                                     <li class="flex items-center gap-2">
-                                        <div class="w-7 h-7 rounded-full bg-white text-amber-900 flex items-center justify-center text-sm font-bold shrink-0">
+                                        <div class="w-7 h-7 rounded-full bg-white dark:bg-slate-900 text-amber-900 flex items-center justify-center text-sm font-bold shrink-0">
                                             <?= e(strtoupper(mb_substr((string) $req['display_name'], 0, 1))) ?>
                                         </div>
                                         <p class="flex-1 text-sm text-amber-900 truncate font-medium"><?= e($req['display_name']) ?></p>
@@ -107,7 +107,7 @@ $title = 'Teams';
                                         </form>
                                         <form method="post" action="<?= e(url('/teams/' . (int) $t['id'] . '/members/' . (int) $req['user_id'] . '/reject')) ?>" class="contents">
                                             <?= csrf_field() ?>
-                                            <button class="min-h-[32px] text-xs px-3 rounded-md bg-white border border-amber-300 text-amber-900 hover:bg-amber-100" aria-label="Afwijzen">×</button>
+                                            <button class="min-h-[32px] text-xs px-3 rounded-md bg-white dark:bg-slate-900 border border-amber-300 text-amber-900 hover:bg-amber-100" aria-label="Afwijzen">×</button>
                                         </form>
                                     </li>
                                 <?php endforeach; ?>

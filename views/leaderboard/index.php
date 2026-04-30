@@ -10,12 +10,12 @@ use GamesPool\Models\Leaderboard;
 $title = 'Leaderboard';
 $isElo = $game && ($game['score_type'] === 'elo') && $period === 'lifetime';
 $pointsLabel = $isElo ? 'Rating' : 'Punten';
-$inputCls = 'rounded-lg bg-white border border-slate-300 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand';
+$inputCls = 'rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand';
 ?>
 
 <div class="mb-4">
-    <h1 class="text-2xl font-bold text-navy">Leaderboard</h1>
-    <p class="text-slate-500 text-sm">Wie staat er aan kop?</p>
+    <h1 class="text-2xl font-bold text-navy dark:text-slate-100">Leaderboard</h1>
+    <p class="text-slate-500 dark:text-slate-400 text-sm">Wie staat er aan kop?</p>
 </div>
 
 <form method="get" action="<?= e(url('/leaderboard')) ?>" class="grid grid-cols-2 gap-2 mb-4">
@@ -36,38 +36,38 @@ $inputCls = 'rounded-lg bg-white border border-slate-300 px-3 py-2.5 text-base f
     </select>
 </form>
 
-<div class="flex border-b border-slate-200 mb-4 text-sm">
-    <button type="button" data-tab="players" class="tab-btn flex-1 px-3 py-2 border-b-2 border-brand text-navy font-semibold">
+<div class="flex border-b border-slate-200 dark:border-slate-800 mb-4 text-sm">
+    <button type="button" data-tab="players" class="tab-btn flex-1 px-3 py-2 border-b-2 border-brand text-navy dark:text-slate-100 font-semibold">
         Spelers
     </button>
-    <button type="button" data-tab="teams" class="tab-btn flex-1 px-3 py-2 border-b-2 border-transparent text-slate-500 hover:text-navy">
+    <button type="button" data-tab="teams" class="tab-btn flex-1 px-3 py-2 border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-navy">
         Teams
     </button>
 </div>
 
 <section data-pane="players">
     <?php if (empty($players)): ?>
-        <p class="text-center text-slate-500 py-8">Nog geen scores in deze periode.</p>
+        <p class="text-center text-slate-500 dark:text-slate-400 py-8">Nog geen scores in deze periode.</p>
     <?php else: ?>
         <ol class="space-y-2">
             <?php foreach ($players as $i => $p): ?>
-                <li class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-card">
+                <li class="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 shadow-card">
                     <span class="w-7 text-center text-sm font-bold tabular-nums
-                        <?= $i === 0 ? 'text-amber-500' : ($i === 1 ? 'text-slate-500' : ($i === 2 ? 'text-amber-700' : 'text-slate-400')) ?>">
+                        <?= $i === 0 ? 'text-amber-500' : ($i === 1 ? 'text-slate-500 dark:text-slate-400' : ($i === 2 ? 'text-amber-700' : 'text-slate-400')) ?>">
                         <?= $i + 1 ?>
                     </span>
-                    <div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 shrink-0">
+                    <div class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-400 shrink-0">
                         <?= e(strtoupper(mb_substr($p['display_name'], 0, 1))) ?>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-navy truncate"><?= e($p['display_name']) ?></p>
-                        <p class="text-xs text-slate-500">
+                        <p class="font-semibold text-navy dark:text-slate-100 truncate"><?= e($p['display_name']) ?></p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
                             <?= (int) $p['matches_played'] ?> matches
                             <?php if (!$isElo): ?> · <?= (int) $p['wins'] ?> winst<?php endif; ?>
                         </p>
                     </div>
                     <div class="text-right">
-                        <p class="text-lg font-bold tabular-nums text-navy"><?= e((string) (int) $p['total_points']) ?></p>
+                        <p class="text-lg font-bold tabular-nums text-navy dark:text-slate-100"><?= e((string) (int) $p['total_points']) ?></p>
                         <p class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold"><?= e($pointsLabel) ?></p>
                     </div>
                 </li>
@@ -78,16 +78,16 @@ $inputCls = 'rounded-lg bg-white border border-slate-300 px-3 py-2.5 text-base f
 
 <section data-pane="teams" class="hidden">
     <?php if (empty($teams)): ?>
-        <p class="text-center text-slate-500 py-8">Nog geen team-scores in deze periode.</p>
+        <p class="text-center text-slate-500 dark:text-slate-400 py-8">Nog geen team-scores in deze periode.</p>
     <?php else: ?>
         <ol class="space-y-2">
             <?php foreach ($teams as $i => $t): ?>
-                <li class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-card">
+                <li class="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 shadow-card">
                     <span class="w-7 text-center text-sm font-bold tabular-nums
-                        <?= $i === 0 ? 'text-amber-500' : ($i === 1 ? 'text-slate-500' : ($i === 2 ? 'text-amber-700' : 'text-slate-400')) ?>">
+                        <?= $i === 0 ? 'text-amber-500' : ($i === 1 ? 'text-slate-500 dark:text-slate-400' : ($i === 2 ? 'text-amber-700' : 'text-slate-400')) ?>">
                         <?= $i + 1 ?>
                     </span>
-                    <div class="w-9 h-9 rounded-md bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-500 shrink-0 overflow-hidden">
+                    <div class="w-9 h-9 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-400 shrink-0 overflow-hidden">
                         <?php if (!empty($t['logo_path'])): ?>
                             <img src="<?= e(url('/uploads/logos/' . $t['logo_path'])) ?>" alt="" class="w-full h-full object-cover">
                         <?php else: ?>
@@ -95,11 +95,11 @@ $inputCls = 'rounded-lg bg-white border border-slate-300 px-3 py-2.5 text-base f
                         <?php endif; ?>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-navy truncate"><?= e($t['name']) ?></p>
-                        <p class="text-xs text-slate-500"><?= (int) $t['matches_played'] ?> matches · <?= (int) $t['wins'] ?> winst</p>
+                        <p class="font-semibold text-navy dark:text-slate-100 truncate"><?= e($t['name']) ?></p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400"><?= (int) $t['matches_played'] ?> matches · <?= (int) $t['wins'] ?> winst</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-lg font-bold tabular-nums text-navy"><?= e((string) (int) $t['total_points']) ?></p>
+                        <p class="text-lg font-bold tabular-nums text-navy dark:text-slate-100"><?= e((string) (int) $t['total_points']) ?></p>
                         <p class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Punten</p>
                     </div>
                 </li>
@@ -113,11 +113,14 @@ $inputCls = 'rounded-lg bg-white border border-slate-300 px-3 py-2.5 text-base f
         btn.addEventListener('click', () => {
             const target = btn.dataset.tab;
             document.querySelectorAll('.tab-btn').forEach(b => {
-                b.classList.toggle('border-brand', b === btn);
-                b.classList.toggle('text-navy', b === btn);
-                b.classList.toggle('font-semibold', b === btn);
-                b.classList.toggle('border-transparent', b !== btn);
-                b.classList.toggle('text-slate-500', b !== btn);
+                const active = (b === btn);
+                b.classList.toggle('border-brand', active);
+                b.classList.toggle('text-navy', active);
+                b.classList.toggle('dark:text-slate-100', active);
+                b.classList.toggle('font-semibold', active);
+                b.classList.toggle('border-transparent', !active);
+                b.classList.toggle('text-slate-500', !active);
+                b.classList.toggle('dark:text-slate-400', !active);
             });
             document.querySelectorAll('[data-pane]').forEach(s => {
                 s.classList.toggle('hidden', s.dataset.pane !== target);
