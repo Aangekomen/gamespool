@@ -283,27 +283,60 @@
     setInterval(refreshDeviceTimers, 1000);
 
     // Slide-rotatie — wissel elke 12s, dots in de header tonen voortgang.
+    // sessionStorage onthoudt de huidige slide-index én hoe lang we daar al
+    // op zitten, zodat een 10s page-refresh de rotatie niet steeds reset.
     (function () {
         const slides = Array.from(document.querySelectorAll('.slide'));
         const dotsEl = document.getElementById('dots');
         if (slides.length <= 1) return;
         slides.forEach((_, i) => {
             const d = document.createElement('span');
-            d.className = 'inline-block w-2 h-2 rounded-full transition ' + (i === 0 ? 'bg-brand w-6' : 'bg-slate-700');
+            d.className = 'inline-block w-2 h-2 rounded-full transition bg-slate-700';
             dotsEl.appendChild(d);
         });
         const dots = Array.from(dotsEl.children);
-        let idx = 0;
-        function show(i) {
-            slides[idx].classList.remove('active');
-            dots[idx].classList.replace('bg-brand', 'bg-slate-700');
-            dots[idx].classList.replace('w-6', 'w-2');
-            idx = (i + slides.length) % slides.length;
-            slides[idx].classList.add('active');
-            dots[idx].classList.replace('bg-slate-700', 'bg-brand');
-            dots[idx].classList.replace('w-2', 'w-6');
+        const SLIDE_MS = 12000;
+
+        // Lees opgeslagen positie + verstreken tijd op deze slide
+        let savedIdx = 0;
+        let savedElapsed = 0;
+        try {
+            const raw = sessionStorage.getItem('tv_slide');
+            if (raw) {
+                const obj = JSON.parse(raw);
+                savedIdx = (obj.idx | 0) % slides.length;
+                savedElapsed = Math.max(0, Date.now() - (obj.t || Date.now()));
+            }
+        } catch (e) {}
+
+        let idx = savedIdx;
+        function activate(i) {
+            // Reset huidige
+            slides.forEach((s, j) => s.classList.toggle('active', j === i));
+            dots.forEach((d, j) => {
+                d.classList.toggle('bg-brand', j === i);
+                d.classList.toggle('bg-slate-700', j !== i);
+                d.classList.toggle('w-6', j === i);
+                d.classList.toggle('w-2', j !== i);
+            });
+            idx = i;
         }
-        setInterval(() => show(idx + 1), 12000);
+        function persist(timestamp) {
+            try { sessionStorage.setItem('tv_slide', JSON.stringify({ idx, t: timestamp })); } catch (e) {}
+        }
+
+        activate(idx);
+        // Als we al een tijd op deze slide zaten, wachten we korter tot de switch.
+        const remaining = Math.max(500, SLIDE_MS - (savedElapsed % SLIDE_MS));
+        setTimeout(function tick() {
+            const next = (idx + 1) % slides.length;
+            activate(next);
+            persist(Date.now());
+            setTimeout(tick, SLIDE_MS);
+        }, remaining);
+        // Persist nu vast met "we zitten net hier" (Date.now adjusted) zodat
+        // refreshes binnen die SLIDE_MS de timer correct doorrekenen.
+        persist(Date.now() - (savedElapsed % SLIDE_MS));
     })();
 </script>
 </body>

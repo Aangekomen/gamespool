@@ -34,17 +34,36 @@ class TournamentController
         $name   = trim((string) ($_POST['name'] ?? ''));
         $gameId = (int) ($_POST['game_id'] ?? 0);
         $maxP   = (int) ($_POST['max_players'] ?? 8);
+        $startsAtRaw = trim((string) ($_POST['starts_at'] ?? ''));
+        $startsAt = null;
+        if ($startsAtRaw !== '') {
+            // <input type="datetime-local"> levert "YYYY-MM-DDTHH:MM"
+            $ts = strtotime(str_replace('T', ' ', $startsAtRaw));
+            $startsAt = $ts ? date('Y-m-d H:i:s', $ts) : null;
+        }
         $errors = [];
         if ($name === '' || mb_strlen($name) < 2) $errors['name'][] = 'Naam minimaal 2 tekens.';
         if (!Game::find($gameId)) $errors['game_id'][] = 'Kies een bestaand spel.';
-        if (!in_array($maxP, Tournament::SIZES, true)) $errors['max_players'][] = 'Kies 2, 4, 8 of 16 spelers.';
+        if ($maxP < 2 || $maxP > Tournament::MAX_PLAYERS) {
+            $errors['max_players'][] = 'Kies 2 t/m ' . Tournament::MAX_PLAYERS . ' spelers.';
+        }
         if (!empty($errors)) {
             Session::flash('_errors', $errors);
             redirect('/tournaments/new');
         }
-        $id = Tournament::create($name, $gameId, $maxP, (int) Auth::id());
+        $id = Tournament::create($name, $gameId, $maxP, (int) Auth::id(), $startsAt);
         Session::flash('_flash.success', 'Toernooi aangemaakt — spelers kunnen zich nu aanmelden.');
         redirect('/tournaments/' . $id);
+    }
+
+    public function destroy(string $id): void
+    {
+        Admin::require();
+        $t = Tournament::find((int) $id);
+        if (!$t) redirect('/tournaments');
+        Tournament::delete((int) $t['id']);
+        Session::flash('_flash.success', 'Toernooi verwijderd.');
+        redirect('/tournaments');
     }
 
     public function show(string $id): string

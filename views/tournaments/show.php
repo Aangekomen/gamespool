@@ -9,14 +9,28 @@ $title = $tournament['name'];
 $canStart = $tournament['state'] === 'open' && count($participants) >= 2 && \GamesPool\Core\Admin::is();
 ?>
 
-<div class="flex items-center justify-between mb-2">
-    <div>
+<div class="flex items-start justify-between mb-2 gap-3">
+    <div class="min-w-0">
         <h1 class="text-2xl font-bold text-navy dark:text-slate-100"><?= e((string) $tournament['name']) ?></h1>
         <p class="text-slate-500 dark:text-slate-400 text-sm">
             <?= e((string) ($game['name'] ?? '?')) ?> · max <?= (int) $tournament['max_players'] ?> spelers
+            <?php if (!empty($tournament['starts_at'])): ?>
+                · 🗓️ <?= e(date('d-m-Y H:i', strtotime((string) $tournament['starts_at']))) ?>
+            <?php endif; ?>
         </p>
     </div>
-    <a href="<?= e(url('/tournaments')) ?>" class="text-sm text-slate-500 dark:text-slate-400 hover:text-navy">← lijst</a>
+    <div class="flex items-center gap-2 shrink-0">
+        <a href="<?= e(url('/tournaments')) ?>" class="text-sm text-slate-500 dark:text-slate-400 hover:text-navy">← lijst</a>
+        <?php if (\GamesPool\Core\Admin::is()): ?>
+            <form method="post" action="<?= e(url('/tournaments/' . (int) $tournament['id'])) ?>"
+                  onsubmit="return confirm('Verwijder dit toernooi? De bracket gaat weg; gespeelde matches blijven in de historie.');">
+                <?= csrf_field() ?>
+                <input type="hidden" name="_method" value="DELETE">
+                <button type="submit" aria-label="Verwijder toernooi"
+                        class="text-sm text-red-700 hover:bg-red-50 px-2 py-1 rounded">Verwijder</button>
+            </form>
+        <?php endif; ?>
+    </div>
 </div>
 
 <?php if ($tournament['state'] === 'completed' && !empty($tournament['winner_id'])):

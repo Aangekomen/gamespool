@@ -5,6 +5,7 @@
 /** @var array|null $games */
 /** @var array|null $recentMatches */
 /** @var bool|null $hasTeam */
+/** @var array|null $tournaments */
 $title = 'GamesPool';
 ?>
 
@@ -88,6 +89,45 @@ $title = 'GamesPool';
             <?php endforeach; ?>
         </div>
     </div>
+
+    <!-- Aankomende toernooien -->
+    <?php if (!empty($tournaments)): ?>
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-4">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-bold text-navy dark:text-slate-100 flex items-center gap-2">
+                    🏆 Toernooien
+                </h2>
+                <a href="<?= e(url('/tournaments')) ?>" class="text-xs text-brand-dark font-semibold hover:underline">Alle →</a>
+            </div>
+            <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+                <?php foreach ($tournaments as $t):
+                    $isOpen = $t['state'] === 'open';
+                    $stateBadge = $isOpen
+                        ? ['Aanmelden', 'bg-brand-light dark:bg-brand-dark/25 text-brand-dark dark:text-brand-light']
+                        : ['Bezig',     'bg-amber-100 text-amber-800'];
+                ?>
+                    <li>
+                        <a href="<?= e(url('/tournaments/' . (int) $t['id'])) ?>"
+                           class="flex items-center justify-between py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 -mx-2 px-2 rounded-md gap-3">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-bold text-navy dark:text-slate-100 truncate"><?= e((string) $t['name']) ?></p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                    <?= e((string) $t['game_name']) ?> ·
+                                    <?= (int) $t['player_count'] ?> / <?= (int) $t['max_players'] ?>
+                                    <?php if (!empty($t['starts_at'])): ?>
+                                        · 🗓️ <?= e(date('d-m H:i', strtotime((string) $t['starts_at']))) ?>
+                                    <?php endif; ?>
+                                </p>
+                            </div>
+                            <span class="shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full <?= $stateBadge[1] ?>">
+                                <?= e($stateBadge[0]) ?>
+                            </span>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
 
     <!-- Now playing -->
     <?php if (!empty($activeMatches)): ?>

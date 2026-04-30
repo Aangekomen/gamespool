@@ -44,13 +44,35 @@ class Tournament
         );
     }
 
-    public static function create(string $name, int $gameId, int $maxPlayers, int $ownerId): int
+    public static function create(string $name, int $gameId, int $maxPlayers, int $ownerId, ?string $startsAt = null): int
     {
         $maxPlayers = max(2, min(self::MAX_PLAYERS, $maxPlayers));
         $slug = Slug::unique($name, fn ($s) => (bool) Database::fetch('SELECT id FROM tournaments WHERE slug = ?', [$s]));
         return Database::insert(
-            'INSERT INTO tournaments (name, slug, game_id, max_players, owner_id) VALUES (?, ?, ?, ?, ?)',
-            [$name, $slug, $gameId, $maxPlayers, $ownerId]
+            'INSERT INTO tournaments (name, slug, game_id, max_players, owner_id, starts_at) VALUES (?, ?, ?, ?, ?, ?)',
+            [$name, $slug, $gameId, $maxPlayers, $ownerId, $startsAt]
+        );
+    }
+
+    public static function delete(int $tournamentId): void
+    {
+        // Detach matches (we behouden de match-historie, set tournament_id NULL)
+        Database::query('UPDATE matches SET tournament_id = NULL WHERE tournament_id = ?', [$tournamentId]);
+        Database::query('DELETE FROM tournaments WHERE id = ?', [$tournamentId]);
+    }
+
+    /** Open of komende toernooien (nog niet voorbij). */
+    public static function upcoming(int $limit = 5): array
+    {
+        return Database::fetchAll(
+            "SELECT t.*, g.name AS game_name, g.slug AS game_slug,
+                    (SELECT COUNT(*) FROM tournament_participants tp WHERE tp.tournament_id = t.id) AS player_count
+               FROM tournaments t
+               JOIN games g ON g.id = t.game_id
+              WHERE t.state IN ('open','running')
+                AND (t.starts_at IS NULL OR t.starts_at >= (NOW() - INTERVAL 1 DAY))
+              ORDER BY (t.starts_at IS NULL) ASC, t.starts_at ASC, t.created_at DESC
+              LIMIT " . (int) $limit
         );
     }
 

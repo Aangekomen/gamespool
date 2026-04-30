@@ -9,6 +9,7 @@ use GamesPool\Models\Game;
 use GamesPool\Models\GameMatch;
 use GamesPool\Models\Leaderboard;
 use GamesPool\Models\Team;
+use GamesPool\Models\Tournament;
 
 class HomeController
 {
@@ -27,6 +28,7 @@ class HomeController
             'activeMatches' => GameMatch::active(8),
             'recentMatches' => GameMatch::recent(5, $userId),
             'hasTeam'       => count($myTeams) > 0,
+            'tournaments'   => Tournament::upcoming(3),
         ]);
     }
 

@@ -94,6 +94,7 @@ class App
         $r->post('/tournaments/{id}/register',  [TournamentController::class, 'register']);
         $r->post('/tournaments/{id}/leave',     [TournamentController::class, 'unregister']);
         $r->post('/tournaments/{id}/start',     [TournamentController::class, 'start']);
+        $r->delete('/tournaments/{id}',         [TournamentController::class, 'destroy']);
 
         // Teams
         $r->get('/teams',                                       [TeamController::class, 'index']);
