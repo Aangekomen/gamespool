@@ -63,4 +63,12 @@
         </div>
         <span class="text-brand-dark">→</span>
     </a>
+    <a href="<?= e(url('/tv')) ?>" target="_blank" rel="noopener"
+       class="flex items-center justify-between rounded-xl bg-navy text-white border border-navy-soft p-4 shadow-card hover:bg-navy-soft">
+        <div>
+            <p class="font-semibold">📺 TV-scherm</p>
+            <p class="text-xs text-white/70">Open de publieke kiosk-view (verticaal HD) in een nieuw tabblad.</p>
+        </div>
+        <span class="text-brand">→</span>
+    </a>
 </div>

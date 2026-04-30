@@ -8,7 +8,7 @@ use GamesPool\Core\Slug;
 
 class Game
 {
-    public const SCORE_TYPES = ['win_loss', 'points_per_match', 'elo'];
+    public const SCORE_TYPES = ['win_loss', 'points_per_match', 'elo', 'team_score'];
 
     public static function defaultConfig(string $scoreType): array
     {
@@ -16,6 +16,7 @@ class Game
             'win_loss'         => ['win_points' => 3, 'loss_points' => 0, 'draw_points' => 1],
             'points_per_match' => [],
             'elo'              => ['start_rating' => 1000, 'k_factor' => 24],
+            'team_score'       => ['win_points' => 3, 'loss_points' => 0, 'draw_points' => 1],
             default            => [],
         };
     }
@@ -117,6 +118,7 @@ class Game
             'win_loss'         => 'Winnaar / verliezer (vaste punten)',
             'points_per_match' => 'Score per match (vrije punten)',
             'elo'              => 'Elo-rating',
+            'team_score'       => 'Team vs Team (eindstand per team)',
             default            => $type,
         };
     }

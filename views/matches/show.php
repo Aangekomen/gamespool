@@ -24,6 +24,37 @@ $type  = $game['score_type'] ?? 'win_loss';
         </span>
     </div>
 
+    <?php if ($type === 'team_score' && $match['state'] === 'completed'):
+        $bySide = ['A' => [], 'B' => []];
+        foreach ($participants as $p) {
+            $side = $p['match_side'] ?? null;
+            if ($side === 'A' || $side === 'B') $bySide[$side][] = $p;
+        }
+        $scoreA = $bySide['A'][0]['raw_score'] ?? null;
+        $scoreB = $bySide['B'][0]['raw_score'] ?? null;
+        $aWin = $scoreA !== null && $scoreB !== null && (int) $scoreA > (int) $scoreB;
+        $bWin = $scoreA !== null && $scoreB !== null && (int) $scoreB > (int) $scoreA;
+    ?>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <?php foreach (['A' => $aWin, 'B' => $bWin] as $side => $isWin):
+                $score = $side === 'A' ? $scoreA : $scoreB;
+            ?>
+                <div class="rounded-2xl border <?= $isWin ? 'border-brand bg-brand-light' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900' ?> p-4 text-center shadow-card">
+                    <p class="text-[11px] uppercase tracking-wide font-bold <?= $isWin ? 'text-brand-dark' : 'text-slate-500 dark:text-slate-400' ?>">Team <?= $side ?></p>
+                    <p class="text-4xl font-black tabular-nums <?= $isWin ? 'text-navy' : 'text-navy dark:text-slate-100' ?>"><?= e((string) ($score ?? '–')) ?></p>
+                    <ul class="mt-2 space-y-1">
+                        <?php foreach ($bySide[$side] as $sp):
+                            $spName = $sp['display_name'] ?? '–';
+                            $spTextCls = $isWin ? 'text-navy' : 'text-navy dark:text-slate-100';
+                        ?>
+                            <li class="text-sm font-semibold truncate <?= $spTextCls ?>"><?= e($spName) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <p class="text-center text-xs text-slate-500 dark:text-slate-400">+<?= (int) ($participants[0]['points_awarded'] ?? 0) ?> punten voor winnaars</p>
+    <?php else: ?>
     <ul class="space-y-2">
         <?php foreach ($participants as $p):
             $name = $p['display_name'] ?? 'Onbekend';
@@ -72,6 +103,7 @@ $type  = $game['score_type'] ?? 'win_loss';
             </li>
         <?php endforeach; ?>
     </ul>
+    <?php endif; ?>
 
     <?php if ($match['state'] === 'in_progress'): ?>
         <a href="<?= e(url('/matches/' . $match['id'] . '/record')) ?>"

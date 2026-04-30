@@ -23,8 +23,53 @@ class ScoreEngine
         return match ($type) {
             'points_per_match' => self::points($participants),
             'elo'              => self::elo($game, $cfg, $participants),
+            'team_score'       => self::teamScore($cfg, $participants),
             default            => self::winLoss($cfg, $participants),
         };
+    }
+
+    /**
+     * Team A vs Team B. Each participant has 'match_side' ('A'/'B') and
+     * 'raw_score' (team's final score, same for everyone on that side).
+     * Higher side score → its players get win_points, others get loss_points;
+     * tie → everyone gets draw_points.
+     */
+    private static function teamScore(array $cfg, array $participants): array
+    {
+        $win  = (int) ($cfg['win_points']  ?? 3);
+        $draw = (int) ($cfg['draw_points'] ?? 1);
+        $loss = (int) ($cfg['loss_points'] ?? 0);
+
+        $sideScores = ['A' => null, 'B' => null];
+        foreach ($participants as $p) {
+            $side = $p['match_side'] ?? null;
+            if (($side === 'A' || $side === 'B') && isset($p['raw_score'])) {
+                $sideScores[$side] = (int) $p['raw_score'];
+            }
+        }
+        $winner = null;
+        if ($sideScores['A'] !== null && $sideScores['B'] !== null) {
+            if ($sideScores['A'] > $sideScores['B']) {
+                $winner = 'A';
+            } elseif ($sideScores['B'] > $sideScores['A']) {
+                $winner = 'B';
+            }
+        }
+
+        foreach ($participants as &$p) {
+            $side = $p['match_side'] ?? null;
+            if ($winner === null) {
+                $p['result'] = 'draw';
+                $p['points_awarded'] = $draw;
+            } elseif ($side === $winner) {
+                $p['result'] = 'win';
+                $p['points_awarded'] = $win;
+            } else {
+                $p['result'] = 'loss';
+                $p['points_awarded'] = $loss;
+            }
+        }
+        return $participants;
     }
 
     private static function winLoss(array $cfg, array $participants): array

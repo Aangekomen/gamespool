@@ -65,6 +65,20 @@ $inputCls = 'w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-30
             <p class="text-sm text-slate-600 dark:text-slate-300">De ingevoerde score per match telt rechtstreeks als punten (bijv. 7 ballen gepot = 7 punten).</p>
         </div>
 
+        <div data-config="team_score" class="<?= $currentType === 'team_score' ? '' : 'hidden' ?> space-y-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-surface dark:bg-slate-950 p-4">
+            <p class="text-sm text-slate-600 dark:text-slate-300">Bv. tafelvoetbal of pingpong-dubbel: 2 teams, eindstand per team beslist over winst.</p>
+            <div class="grid grid-cols-3 gap-3">
+                <?php foreach (['win_points' => 'Winst', 'draw_points' => 'Gelijk', 'loss_points' => 'Verlies'] as $k => $label):
+                    $val = (int) ($currentType === 'team_score' ? ($config[$k] ?? Game::defaultConfig('team_score')[$k]) : Game::defaultConfig('team_score')[$k]); ?>
+                    <label class="block">
+                        <span class="block text-xs text-slate-500 dark:text-slate-400 mb-1"><?= e($label) ?></span>
+                        <input type="number" name="score_config[<?= e($k) ?>]" value="<?= e((string) $val) ?>" min="0" max="100"
+                               class="w-full rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-2 py-2 text-base">
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
         <div data-config="elo" class="<?= $currentType === 'elo' ? '' : 'hidden' ?> space-y-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-surface dark:bg-slate-950 p-4">
             <p class="text-sm text-slate-600 dark:text-slate-300">Elo-rating per speler. Sterkere tegenstander winnen levert meer op.</p>
             <div class="grid grid-cols-2 gap-3">

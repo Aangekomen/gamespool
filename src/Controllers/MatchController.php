@@ -164,6 +164,33 @@ class MatchController
                     'result'    => null, // engine derives
                 ];
             }
+        } elseif ($game['score_type'] === 'team_score') {
+            $sides       = (array) ($_POST['side'] ?? []);
+            $teamScores  = (array) ($_POST['team_score'] ?? []);
+            $scoreA      = isset($teamScores['A']) ? (int) $teamScores['A'] : null;
+            $scoreB      = isset($teamScores['B']) ? (int) $teamScores['B'] : null;
+
+            // At least 1 player per side + both scores set
+            $countA = 0; $countB = 0;
+            foreach ($existing as $p) {
+                $side = $sides[(int) $p['id']] ?? null;
+                if ($side === 'A') $countA++; elseif ($side === 'B') $countB++;
+            }
+            if ($scoreA === null || $scoreB === null || $countA < 1 || $countB < 1) {
+                Session::flash('_flash.error', 'Verdeel alle spelers over Team A en Team B en vul beide scores in.');
+                redirect('/matches/' . $match['id'] . '/record');
+            }
+
+            foreach ($existing as $p) {
+                $side  = $sides[(int) $p['id']] ?? null;
+                $score = $side === 'A' ? $scoreA : ($side === 'B' ? $scoreB : null);
+                $inputs[] = [
+                    'id'         => (int) $p['id'],
+                    'match_side' => $side,
+                    'raw_score'  => $score,
+                    'result'     => null,
+                ];
+            }
         } else {
             // win_loss + elo: outcome_mode = 'winner' (with winner_id) or 'draw'
             $mode    = (string) ($_POST['outcome_mode'] ?? '');

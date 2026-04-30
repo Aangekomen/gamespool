@@ -110,6 +110,7 @@ class GameMatch
                 'id'         => $id,
                 'user_id'    => $base['user_id'] ?? null,
                 'team_id'    => $base['team_id'] ?? null,
+                'match_side' => $row['match_side'] ?? ($base['match_side'] ?? null),
                 'raw_score'  => isset($row['raw_score']) ? (int) $row['raw_score'] : null,
                 'result'     => $row['result'] ?? null,
             ]);
@@ -122,7 +123,7 @@ class GameMatch
             foreach ($computed as $row) {
                 Database::query(
                     'UPDATE match_participants
-                        SET raw_score = ?, result = ?, points_awarded = ?, rating_before = ?, rating_after = ?
+                        SET raw_score = ?, result = ?, points_awarded = ?, rating_before = ?, rating_after = ?, match_side = ?
                       WHERE id = ?',
                     [
                         $row['raw_score']     ?? null,
@@ -130,6 +131,7 @@ class GameMatch
                         (int) ($row['points_awarded'] ?? 0),
                         $row['rating_before'] ?? null,
                         $row['rating_after']  ?? null,
+                        $row['match_side']    ?? null,
                         (int) $row['id'],
                     ]
                 );

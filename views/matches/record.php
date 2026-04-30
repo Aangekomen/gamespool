@@ -19,7 +19,52 @@ $type  = $game['score_type'];
           class="space-y-3 bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card">
         <?= csrf_field() ?>
 
-        <?php if ($type === 'points_per_match'): ?>
+        <?php if ($type === 'team_score'): ?>
+            <p class="text-sm text-slate-600 dark:text-slate-300 mb-2">Verdeel spelers over Team A en Team B en vul de eindstand in.</p>
+
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <label class="block">
+                    <span class="block text-xs font-bold uppercase tracking-wide text-brand-dark mb-1">Team A — score</span>
+                    <input type="number" name="team_score[A]" min="0" step="1" required
+                           class="w-full rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-3 py-2.5 text-2xl font-bold text-center tabular-nums focus:outline-none focus:ring-2 focus:ring-brand"
+                           placeholder="0">
+                </label>
+                <label class="block">
+                    <span class="block text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300 mb-1">Team B — score</span>
+                    <input type="number" name="team_score[B]" min="0" step="1" required
+                           class="w-full rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-3 py-2.5 text-2xl font-bold text-center tabular-nums focus:outline-none focus:ring-2 focus:ring-brand"
+                           placeholder="0">
+                </label>
+            </div>
+
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-1">Tik op A of B per speler om de teams te verdelen.</p>
+            <?php foreach ($participants as $i => $p):
+                $name = $p['display_name'] ?? 'Onbekend';
+                $defaultSide = $i % 2 === 0 ? 'A' : 'B';
+            ?>
+                <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-surface dark:bg-slate-950 p-3 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-400 shrink-0 overflow-hidden">
+                        <?php if (!empty($p['avatar_path'])): ?>
+                            <img src="<?= e(url('/uploads/avatars/' . $p['avatar_path'])) ?>" alt="" class="w-full h-full object-cover">
+                        <?php else: ?>
+                            <?= e(strtoupper(mb_substr($name, 0, 1))) ?>
+                        <?php endif; ?>
+                    </div>
+                    <p class="font-semibold text-navy dark:text-slate-100 truncate flex-1 min-w-0"><?= e($name) ?></p>
+                    <div class="flex items-center gap-1 shrink-0" role="radiogroup" aria-label="Team voor <?= e($name) ?>">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="side[<?= (int) $p['id'] ?>]" value="A" class="peer sr-only" <?= $defaultSide === 'A' ? 'checked' : '' ?>>
+                            <span class="inline-flex items-center justify-center w-10 h-10 rounded-md text-sm font-bold border-2 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 peer-checked:bg-brand peer-checked:border-brand peer-checked:text-white">A</span>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="side[<?= (int) $p['id'] ?>]" value="B" class="peer sr-only" <?= $defaultSide === 'B' ? 'checked' : '' ?>>
+                            <span class="inline-flex items-center justify-center w-10 h-10 rounded-md text-sm font-bold border-2 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 peer-checked:bg-navy peer-checked:border-navy peer-checked:text-white">B</span>
+                        </label>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+
+        <?php elseif ($type === 'points_per_match'): ?>
             <p class="text-sm text-slate-600 dark:text-slate-300 mb-1">Vul per speler de score in.</p>
             <?php foreach ($participants as $p):
                 $name = $p['display_name'] ?? 'Onbekend';
@@ -68,7 +113,7 @@ $type  = $game['score_type'];
         <?php endif; ?>
 
         <button id="submitBtn" class="w-full mt-2 rounded-lg bg-brand text-white font-semibold px-4 py-3 hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed"
-                <?= $type !== 'points_per_match' ? 'disabled' : '' ?>>
+                <?= in_array($type, ['win_loss', 'elo'], true) ? 'disabled' : '' ?>>
             Opslaan
         </button>
     </form>

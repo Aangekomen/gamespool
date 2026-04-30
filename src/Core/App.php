@@ -12,6 +12,7 @@ use GamesPool\Controllers\MatchController;
 use GamesPool\Controllers\ProfileController;
 use GamesPool\Controllers\QrController;
 use GamesPool\Controllers\TeamController;
+use GamesPool\Controllers\TvController;
 
 class App
 {
@@ -105,6 +106,9 @@ class App
         $r->get('/m/{token}',             [MatchController::class, 'lobby']);
         $r->post('/m/{token}/accept',     [MatchController::class, 'acceptLobby']);
         $r->get('/qr.svg',                [QrController::class,    'svg']);
+
+        // Public TV / kiosk view
+        $r->get('/tv',                    [TvController::class,    'index']);
 
         // Admin
         $r->get('/admin',                                 [AdminController::class, 'index']);
