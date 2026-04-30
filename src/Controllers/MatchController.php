@@ -88,7 +88,21 @@ class MatchController
             redirect($back);
         }
 
-        $matchId = GameMatch::create($gameId, (int) Auth::id(), $participants, $label);
+        // Optional device code attaches the match to a printed QR-station
+        $deviceId = null;
+        $deviceCode = strtoupper(trim((string) ($_POST['device_code'] ?? '')));
+        if ($deviceCode !== '') {
+            $device = Device::findByCode($deviceCode);
+            if (!$device) {
+                Session::flash('_errors', ['device_code' => ['Onbekende apparaat-code.']]);
+                Session::flash('_old', ['game_id' => $gameId, 'label' => $label, 'device_code' => $deviceCode]);
+                $back = '/matches/new' . ($gameId ? '?game_id=' . $gameId : '');
+                redirect($back);
+            }
+            $deviceId = (int) $device['id'];
+        }
+
+        $matchId = GameMatch::create($gameId, (int) Auth::id(), $participants, $label, $deviceId);
         redirect('/matches/' . $matchId . '/record');
     }
 

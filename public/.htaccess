@@ -6,6 +6,21 @@
     RewriteRule ^ index.php [QSA,L]
 </IfModule>
 
+# Allow profile photo uploads larger than the PHP defaults — server-side
+# we crop + re-encode to ~50KB so the originals can be much bigger.
+<IfModule mod_php.c>
+    php_value upload_max_filesize 12M
+    php_value post_max_size 14M
+</IfModule>
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 12M
+    php_value post_max_size 14M
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 12M
+    php_value post_max_size 14M
+</IfModule>
+
 # Block direct access to dotfiles
 <FilesMatch "^\.">
     Require all denied

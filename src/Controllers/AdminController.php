@@ -9,6 +9,8 @@ use GamesPool\Core\Session;
 use GamesPool\Core\Validator;
 use GamesPool\Models\Device;
 use GamesPool\Models\Game;
+use GamesPool\Models\GameMatch;
+use GamesPool\Models\Team;
 
 class AdminController
 {
@@ -132,6 +134,103 @@ class AdminController
         Session::flash('_flash.success', 'Apparaat verwijderd.');
         redirect('/admin/devices');
     }
+
+    // ---- Teams (admin) ----
+
+    public function teamsIndex(): string
+    {
+        Admin::require();
+        return view('admin/teams/index', [
+            'teams' => Team::allWithStats(),
+        ]);
+    }
+
+    public function teamsEdit(string $id): string
+    {
+        Admin::require();
+        $team = Team::find((int) $id) ?? $this->notFound();
+        return view('admin/teams/edit', [
+            'team'    => $team,
+            'members' => Team::membersWithRoles((int) $team['id']),
+            'errors'  => Session::pull('_errors', []),
+        ]);
+    }
+
+    public function teamsUpdate(string $id): void
+    {
+        Admin::require();
+        $team = Team::find((int) $id) ?? $this->notFound();
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $v = (new Validator(['name' => $name]))->required('name')->min('name', 2)->max('name', 100);
+        if ($v->fails()) {
+            Session::flash('_errors', $v->errors());
+            redirect('/admin/teams/' . $team['id'] . '/edit');
+        }
+        Team::rename((int) $team['id'], $name);
+        Session::flash('_flash.success', 'Team bijgewerkt.');
+        redirect('/admin/teams/' . $team['id'] . '/edit');
+    }
+
+    public function teamsRegenerateCode(string $id): void
+    {
+        Admin::require();
+        $team = Team::find((int) $id) ?? $this->notFound();
+        $code = Team::regenerateCode((int) $team['id']);
+        Session::flash('_flash.success', 'Nieuwe join-code: ' . $code);
+        redirect('/admin/teams/' . $team['id'] . '/edit');
+    }
+
+    public function teamsDestroy(string $id): void
+    {
+        Admin::require();
+        $team = Team::find((int) $id) ?? $this->notFound();
+        Team::delete((int) $team['id']);
+        Session::flash('_flash.success', 'Team verwijderd.');
+        redirect('/admin/teams');
+    }
+
+    // ---- Matches (admin) ----
+
+    public function matchesIndex(): string
+    {
+        Admin::require();
+        return view('admin/matches/index', [
+            'matches' => GameMatch::allRecent(100),
+        ]);
+    }
+
+    public function matchesEdit(string $id): string
+    {
+        Admin::require();
+        $match = GameMatch::find((int) $id) ?? $this->notFound();
+        return view('admin/matches/edit', [
+            'match'        => $match,
+            'game'         => Game::find((int) $match['game_id']),
+            'participants' => GameMatch::participants((int) $match['id']),
+            'errors'       => Session::pull('_errors', []),
+        ]);
+    }
+
+    public function matchesUpdate(string $id): void
+    {
+        Admin::require();
+        $match = GameMatch::find((int) $id) ?? $this->notFound();
+        $label = trim((string) ($_POST['label'] ?? '')) ?: null;
+        GameMatch::updateLabel((int) $match['id'], $label);
+        Session::flash('_flash.success', 'Match bijgewerkt.');
+        redirect('/admin/matches/' . $match['id'] . '/edit');
+    }
+
+    public function matchesDestroy(string $id): void
+    {
+        Admin::require();
+        $match = GameMatch::find((int) $id) ?? $this->notFound();
+        GameMatch::delete((int) $match['id']);
+        Session::flash('_flash.success', 'Match verwijderd.');
+        redirect('/admin/matches');
+    }
+
+    // ---- helpers ----
 
     private function payload(): array
     {

@@ -14,8 +14,10 @@
           class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-card">
         <?= csrf_field() ?>
         <label for="join_code" class="block text-sm font-medium text-navy dark:text-slate-100 mb-2">Join-code</label>
-        <input id="join_code" type="text" name="join_code" autofocus
+<?php $prefill = preg_replace('/\D/', '', (string) ($_GET['code'] ?? '')) ?? ''; if (strlen($prefill) > 6) $prefill = substr($prefill, 0, 6); ?>
+        <input id="join_code" type="text" name="join_code" <?= $prefill === '' ? 'autofocus' : '' ?>
                inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required
+               value="<?= e($prefill) ?>"
                placeholder="000000"
                class="w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 px-4 py-3 text-3xl tracking-[0.4em] text-center font-mono font-bold text-navy dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand">
 

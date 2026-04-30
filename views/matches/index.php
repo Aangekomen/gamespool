@@ -1,16 +1,22 @@
 <?php \GamesPool\Core\View::extend('layouts/app'); ?>
 <?php $title = 'Matches'; /** @var array $matches */ ?>
 
-<div class="flex items-center justify-between mb-4">
-    <div>
+<div class="flex items-center justify-between mb-4 gap-2">
+    <div class="min-w-0">
         <h1 class="text-2xl font-bold text-navy dark:text-slate-100">Matches</h1>
         <p class="text-slate-500 dark:text-slate-400 text-sm">Recent gespeelde en lopende potjes.</p>
     </div>
     <a href="<?= e(url('/matches/new')) ?>"
-       class="inline-flex items-center px-4 py-2 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">
+       class="hidden sm:inline-flex items-center shrink-0 px-4 py-2 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">
         + Nieuwe match
     </a>
 </div>
+
+<!-- Mobile FAB -->
+<a href="<?= e(url('/matches/new')) ?>" aria-label="Nieuwe match"
+   class="sm:hidden fixed right-4 bottom-24 z-30 w-14 h-14 rounded-full bg-brand text-white shadow-lg hover:bg-brand-dark flex items-center justify-center text-3xl font-bold leading-none">
+    +
+</a>
 
 <?php if (empty($matches)): ?>
     <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center shadow-card">

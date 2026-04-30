@@ -79,6 +79,52 @@ $title = 'GamesPool';
         </div>
     </div>
 
+    <!-- Now playing -->
+    <?php if (!empty($activeMatches)): ?>
+        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-4">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-bold text-navy dark:text-slate-100 flex items-center gap-2">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-brand"></span>
+                    </span>
+                    Now playing
+                </h2>
+                <span class="text-xs text-slate-500 dark:text-slate-400"><?= count($activeMatches) ?> actief</span>
+            </div>
+            <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+                <?php foreach ($activeMatches as $am):
+                    $names = $am['participant_names'] ?? [];
+                    $href  = $am['state'] === 'waiting'
+                        ? url('/m/' . $am['join_token'])
+                        : url('/matches/' . $am['id']);
+                ?>
+                    <li>
+                        <a href="<?= e($href) ?>" class="flex items-center justify-between py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 -mx-2 px-2 rounded-md gap-3">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-semibold text-navy dark:text-slate-100 truncate">
+                                    <?= e($am['game_name']) ?><?= $am['label'] ? ' · ' . e($am['label']) : '' ?>
+                                </p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                    <?php if (!empty($names)): ?>
+                                        <?= e(implode(' vs ', $names)) ?>
+                                    <?php else: ?>
+                                        — geen deelnemers —
+                                    <?php endif; ?>
+                                    <?php if ($am['state'] === 'waiting'): ?> · wacht op tegenstander<?php endif; ?>
+                                </p>
+                            </div>
+                            <span class="shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full
+                                <?= $am['state'] === 'waiting' ? 'bg-amber-100 text-amber-800' : 'bg-brand-light text-brand-dark' ?>">
+                                <?= $am['state'] === 'waiting' ? 'Wacht' : 'Bezig' ?>
+                            </span>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
     <!-- Primary CTA -->
     <a href="<?= e(url('/matches/new')) ?>"
        class="block text-center w-full rounded-xl bg-brand text-white text-base font-bold px-4 py-4 hover:bg-brand-dark shadow-card mb-4">

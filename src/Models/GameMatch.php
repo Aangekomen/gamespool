@@ -62,12 +62,12 @@ class GameMatch
      * Create a new match record (in_progress) with participants but no scores yet.
      * Every participant must have a user_id — guest play is not supported.
      */
-    public static function create(int $gameId, ?int $createdBy, array $participants, ?string $label = null): int
+    public static function create(int $gameId, ?int $createdBy, array $participants, ?string $label = null, ?int $deviceId = null): int
     {
         $token = bin2hex(random_bytes(8));
         $matchId = Database::insert(
-            'INSERT INTO matches (game_id, label, state, join_token, created_by) VALUES (?, ?, "in_progress", ?, ?)',
-            [$gameId, $label, $token, $createdBy]
+            'INSERT INTO matches (game_id, device_id, label, state, join_token, created_by) VALUES (?, ?, ?, "in_progress", ?, ?)',
+            [$gameId, $deviceId, $label, $token, $createdBy]
         );
 
         foreach ($participants as $p) {
@@ -142,6 +142,63 @@ class GameMatch
             if (Database::pdo()->inTransaction()) Database::pdo()->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * Currently-active matches (waiting + in_progress) with participant names joined.
+     */
+    public static function active(int $limit = 10): array
+    {
+        $rows = Database::fetchAll(
+            "SELECT m.*, g.name AS game_name, g.slug AS game_slug
+               FROM matches m
+               JOIN games g ON g.id = m.game_id
+              WHERE m.state IN ('waiting','in_progress')
+              ORDER BY m.started_at DESC
+              LIMIT " . (int) $limit
+        );
+        if (!$rows) return [];
+
+        $ids = array_column($rows, 'id');
+        $place = implode(',', array_fill(0, count($ids), '?'));
+        $parts = Database::fetchAll(
+            "SELECT mp.match_id, u.display_name
+               FROM match_participants mp
+               JOIN users u ON u.id = mp.user_id
+              WHERE mp.match_id IN ($place)
+              ORDER BY mp.id ASC",
+            $ids
+        );
+        $byMatch = [];
+        foreach ($parts as $p) {
+            $byMatch[(int) $p['match_id']][] = $p['display_name'];
+        }
+        foreach ($rows as &$r) {
+            $r['participant_names'] = $byMatch[(int) $r['id']] ?? [];
+        }
+        return $rows;
+    }
+
+    public static function allRecent(int $limit = 100): array
+    {
+        return Database::fetchAll(
+            'SELECT m.*, g.name AS game_name, g.slug AS game_slug,
+                    (SELECT COUNT(*) FROM match_participants p WHERE p.match_id = m.id) AS participant_count
+               FROM matches m
+               JOIN games g ON g.id = m.game_id
+              ORDER BY m.started_at DESC
+              LIMIT ' . (int) $limit
+        );
+    }
+
+    public static function updateLabel(int $matchId, ?string $label): void
+    {
+        Database::query('UPDATE matches SET label = ? WHERE id = ?', [$label, $matchId]);
+    }
+
+    public static function delete(int $matchId): void
+    {
+        Database::query('DELETE FROM matches WHERE id = ?', [$matchId]);
     }
 
     public static function cancel(int $matchId): void

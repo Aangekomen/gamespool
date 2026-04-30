@@ -31,6 +31,25 @@ class TeamController
         ]);
     }
 
+    public function show(string $id): string
+    {
+        Auth::requireLogin();
+        $team = Team::find((int) $id);
+        if (!$team) {
+            http_response_code(404);
+            echo view('errors/404');
+            exit;
+        }
+        $userId = (int) Auth::id();
+        return view('teams/show', [
+            'team'      => $team,
+            'members'   => Team::membersWithRoles((int) $team['id']),
+            'matches'   => Team::matchesPlayed((int) $team['id'], 25),
+            'isMember'  => Team::isMember((int) $team['id'], $userId),
+            'isCaptain' => Team::isCaptain((int) $team['id'], $userId),
+        ]);
+    }
+
     public function showJoin(): string
     {
         Auth::requireLogin();
@@ -123,8 +142,77 @@ class TeamController
     public function leave(string $id): void
     {
         Auth::requireLogin();
-        Team::removeMember((int) $id, (int) Auth::id());
+        $tid = (int) $id;
+        $userId = (int) Auth::id();
+
+        // Captain can only leave by transferring captaincy when others are approved members
+        if (Team::isCaptain($tid, $userId)) {
+            $others = array_values(array_filter(
+                Team::membersWithRoles($tid),
+                fn ($m) => (int) $m['id'] !== $userId
+            ));
+            if (!empty($others)) {
+                Session::flash('_flash.error', 'Draag eerst captainship over voor je vertrekt.');
+                redirect('/teams/' . $tid);
+            }
+        }
+
+        Team::removeMember($tid, $userId);
         Session::flash('_flash.success', 'Team verlaten.');
         redirect('/teams');
+    }
+
+    public function transferAndLeave(string $id): void
+    {
+        Auth::requireLogin();
+        $tid = (int) $id;
+        $userId = (int) Auth::id();
+        if (!Team::isCaptain($tid, $userId)) {
+            redirect('/teams/' . $tid);
+        }
+        $newCaptainId = (int) ($_POST['new_captain_id'] ?? 0);
+        if ($newCaptainId <= 0 || $newCaptainId === $userId) {
+            Session::flash('_flash.error', 'Kies een geldige nieuwe captain.');
+            redirect('/teams/' . $tid);
+        }
+        if (!Team::isMember($tid, $newCaptainId)) {
+            Session::flash('_flash.error', 'Persoon zit niet in dit team.');
+            redirect('/teams/' . $tid);
+        }
+        Team::transferCaptaincy($tid, $newCaptainId);
+        Team::removeMember($tid, $userId);
+        Session::flash('_flash.success', 'Captainship overgedragen — je bent uit het team.');
+        redirect('/teams');
+    }
+
+    public function updateMemberTag(string $teamId, string $userId): void
+    {
+        Auth::requireLogin();
+        $tid = (int) $teamId;
+        $uid = (int) $userId;
+        if (!Team::isCaptain($tid, (int) Auth::id())) {
+            http_response_code(403); echo 'Alleen de captain kan tags wijzigen.'; exit;
+        }
+        $tag = trim((string) ($_POST['tag'] ?? ''));
+        Team::setMemberTag($tid, $uid, $tag !== '' ? $tag : null);
+        Session::flash('_flash.success', 'Tag bijgewerkt.');
+        redirect('/teams/' . $tid);
+    }
+
+    public function kickMember(string $teamId, string $userId): void
+    {
+        Auth::requireLogin();
+        $tid = (int) $teamId;
+        $uid = (int) $userId;
+        if (!Team::isCaptain($tid, (int) Auth::id())) {
+            http_response_code(403); echo 'Alleen de captain kan leden verwijderen.'; exit;
+        }
+        if ($uid === (int) Auth::id()) {
+            Session::flash('_flash.error', 'Captain kan zichzelf niet verwijderen.');
+            redirect('/teams/' . $tid);
+        }
+        Team::removeMember($tid, $uid);
+        Session::flash('_flash.success', 'Lid verwijderd.');
+        redirect('/teams/' . $tid);
     }
 }

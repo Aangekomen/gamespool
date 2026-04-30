@@ -11,8 +11,8 @@
         ['label' => 'Gebruikers', 'value' => $counts['users'],   'href' => url('/admin/users')],
         ['label' => 'Spellen',    'value' => $counts['games'],   'href' => url('/games')],
         ['label' => 'Apparaten',  'value' => $counts['devices'], 'href' => url('/admin/devices')],
-        ['label' => 'Teams',      'value' => $counts['teams'],   'href' => url('/teams')],
-        ['label' => 'Matches',    'value' => $counts['matches'], 'href' => url('/matches')],
+        ['label' => 'Teams',      'value' => $counts['teams'],   'href' => url('/admin/teams')],
+        ['label' => 'Matches',    'value' => $counts['matches'], 'href' => url('/admin/matches')],
     ] as $stat): ?>
         <a href="<?= e($stat['href']) ?>"
            class="block rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card hover:border-brand transition">
@@ -44,6 +44,22 @@
         <div>
             <p class="font-semibold text-navy dark:text-slate-100">Gebruikers</p>
             <p class="text-xs text-slate-500 dark:text-slate-400">Bekijk wie zich heeft geregistreerd.</p>
+        </div>
+        <span class="text-brand-dark">→</span>
+    </a>
+    <a href="<?= e(url('/admin/teams')) ?>"
+       class="flex items-center justify-between rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card hover:border-brand">
+        <div>
+            <p class="font-semibold text-navy dark:text-slate-100">Teams</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Alle teams beheren — naam, code, verwijderen.</p>
+        </div>
+        <span class="text-brand-dark">→</span>
+    </a>
+    <a href="<?= e(url('/admin/matches')) ?>"
+       class="flex items-center justify-between rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card hover:border-brand">
+        <div>
+            <p class="font-semibold text-navy dark:text-slate-100">Matches</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Match-label aanpassen of een match verwijderen.</p>
         </div>
         <span class="text-brand-dark">→</span>
     </a>

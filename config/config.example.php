@@ -24,6 +24,6 @@ return [
         // Sub-folders below public/uploads/
         'avatars_dir' => 'avatars',
         'logos_dir'   => 'logos',
-        'max_bytes'   => 4 * 1024 * 1024, // 4 MB
+        'max_bytes'   => 10 * 1024 * 1024, // 10 MB (image is server-cropped + re-encoded to ~50KB)
     ],
 ];

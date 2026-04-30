@@ -100,10 +100,6 @@ $icon = function (string $name): string {
                     <?php if (\GamesPool\Core\Admin::is()): ?>
                         <a href="<?= e(url('/admin')) ?>" class="px-3 py-1.5 rounded-md text-brand-dark bg-brand-light hover:bg-brand/20 font-medium">Admin</a>
                     <?php endif; ?>
-                    <form method="post" action="<?= e(url('/logout')) ?>">
-                        <?= csrf_field() ?>
-                        <button class="px-3 py-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:text-navy dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800">Uitloggen</button>
-                    </form>
                 <?php else: ?>
                     <a href="<?= e(url('/login')) ?>" class="px-3 py-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:text-navy dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800">Inloggen</a>
                     <a href="<?= e(url('/register')) ?>" class="px-3 py-1.5 rounded-md bg-brand hover:bg-brand-dark text-white font-medium">Account</a>
@@ -115,10 +111,10 @@ $icon = function (string $name): string {
     <main class="flex-1 pb-24">
         <div class="max-w-3xl mx-auto px-4 py-6 sm:py-8">
             <?php if ($msg = flash('success')): ?>
-                <div class="mb-4 rounded-md bg-brand-light border border-brand/30 px-4 py-3 text-brand-dark text-sm font-medium"><?= e((string) $msg) ?></div>
+                <div data-flash class="mb-4 rounded-md bg-brand-light border border-brand/30 px-4 py-3 text-brand-dark text-sm font-medium transition-opacity duration-500"><?= e((string) $msg) ?></div>
             <?php endif; ?>
             <?php if ($msg = flash('error')): ?>
-                <div class="mb-4 rounded-md bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 px-4 py-3 text-red-700 dark:text-red-300 text-sm"><?= e((string) $msg) ?></div>
+                <div data-flash class="mb-4 rounded-md bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 px-4 py-3 text-red-700 dark:text-red-300 text-sm transition-opacity duration-500"><?= e((string) $msg) ?></div>
             <?php endif; ?>
             <?= $sections['content'] ?? '' ?>
         </div>
@@ -141,10 +137,19 @@ $icon = function (string $name): string {
     <script>
         (function () {
             const btn  = document.getElementById('themeToggle');
-            if (!btn) return;
-            btn.addEventListener('click', () => {
-                const isDark = document.documentElement.classList.toggle('dark');
-                try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    const isDark = document.documentElement.classList.toggle('dark');
+                    try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+                });
+            }
+
+            // Auto-dismiss flash messages after 10s
+            document.querySelectorAll('[data-flash]').forEach(el => {
+                setTimeout(() => {
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 600);
+                }, 10000);
             });
         })();
     </script>

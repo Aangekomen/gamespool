@@ -63,7 +63,8 @@ $title = 'Teams';
                 $pending = $pendingPerTeam[(int) $t['id']] ?? [];
             ?>
                 <li class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-card overflow-hidden">
-                    <div class="flex items-center gap-3 px-4 py-3">
+                    <a href="<?= e(url('/teams/' . (int) $t['id'])) ?>"
+                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60">
                         <div class="w-10 h-10 rounded-lg bg-brand-light text-brand-dark flex items-center justify-center font-bold shrink-0 overflow-hidden">
                             <?php if (!empty($t['logo_path'])): ?>
                                 <img src="<?= e(url('/uploads/logos/' . $t['logo_path'])) ?>" alt="" class="w-full h-full object-cover">
@@ -82,12 +83,8 @@ $title = 'Teams';
                                 · Code: <span class="font-mono font-semibold tracking-wider text-navy dark:text-slate-100"><?= e((string) $t['join_code']) ?></span>
                             </p>
                         </div>
-                        <form method="post" action="<?= e(url('/teams/' . (int) $t['id'] . '/leave')) ?>"
-                              onsubmit="return confirm('Team <?= e($t['name']) ?> verlaten?');">
-                            <?= csrf_field() ?>
-                            <button class="min-h-[36px] text-xs px-3 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-red-50 hover:text-red-700 text-slate-500 dark:text-slate-400">Verlaat</button>
-                        </form>
-                    </div>
+                        <span class="text-slate-400 dark:text-slate-500 shrink-0">›</span>
+                    </a>
 
                     <?php if ($isCaptain && !empty($pending)): ?>
                         <div class="bg-amber-50 border-t border-amber-200 px-4 py-3">

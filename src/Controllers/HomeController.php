@@ -22,6 +22,7 @@ class HomeController
             'guest'         => false,
             'stats'         => $this->personalStats($userId),
             'games'         => Game::all(),
+            'activeMatches' => GameMatch::active(8),
             'recentMatches' => GameMatch::recent(5, $userId),
         ]);
     }

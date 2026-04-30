@@ -86,13 +86,44 @@ class Team
     {
         return Database::fetchAll(
             "SELECT u.id, u.display_name, u.first_name, u.last_name, u.email, u.avatar_path,
-                    tm.role, tm.status, tm.joined_at
+                    tm.role, tm.tag, tm.status, tm.joined_at
                FROM team_members tm
                JOIN users u ON u.id = tm.user_id
               WHERE tm.team_id = ? AND tm.status = 'approved'
               ORDER BY (tm.role = 'captain') DESC, u.display_name ASC",
             [$teamId]
         );
+    }
+
+    public static function setMemberTag(int $teamId, int $userId, ?string $tag): void
+    {
+        if ($tag !== null) {
+            $tag = mb_substr(trim($tag), 0, 20);
+            if ($tag === '') $tag = null;
+        }
+        Database::query(
+            'UPDATE team_members SET tag = ? WHERE team_id = ? AND user_id = ?',
+            [$tag, $teamId, $userId]
+        );
+    }
+
+    public static function transferCaptaincy(int $teamId, int $newCaptainUserId): void
+    {
+        Database::pdo()->beginTransaction();
+        try {
+            Database::query(
+                "UPDATE team_members SET role = 'member' WHERE team_id = ? AND role = 'captain' AND status = 'approved'",
+                [$teamId]
+            );
+            Database::query(
+                "UPDATE team_members SET role = 'captain' WHERE team_id = ? AND user_id = ? AND status = 'approved'",
+                [$teamId, $newCaptainUserId]
+            );
+            Database::pdo()->commit();
+        } catch (\Throwable $e) {
+            if (Database::pdo()->inTransaction()) Database::pdo()->rollBack();
+            throw $e;
+        }
     }
 
     public static function isCaptain(int $teamId, int $userId): bool
@@ -160,6 +191,54 @@ class Team
             'DELETE FROM team_members WHERE team_id = ? AND user_id = ?',
             [$teamId, $userId]
         );
+    }
+
+    /**
+     * Recent matches that involved this team (any participant tagged with team_id).
+     */
+    public static function matchesPlayed(int $teamId, int $limit = 25): array
+    {
+        return Database::fetchAll(
+            "SELECT DISTINCT m.id, m.label, m.state, m.started_at, m.ended_at,
+                    g.name AS game_name, g.slug AS game_slug
+               FROM matches m
+               JOIN games g ON g.id = m.game_id
+              WHERE EXISTS (SELECT 1 FROM match_participants p WHERE p.match_id = m.id AND p.team_id = ?)
+              ORDER BY m.started_at DESC
+              LIMIT " . (int) $limit,
+            [$teamId]
+        );
+    }
+
+    public static function allWithStats(): array
+    {
+        return Database::fetchAll(
+            "SELECT t.*,
+                    (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id AND tm.status = 'approved') AS member_count,
+                    (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id AND tm.status = 'pending')  AS pending_count,
+                    (SELECT u.display_name FROM team_members tm JOIN users u ON u.id = tm.user_id
+                       WHERE tm.team_id = t.id AND tm.role = 'captain' AND tm.status = 'approved' LIMIT 1) AS captain_name
+               FROM teams t
+              ORDER BY t.name ASC"
+        );
+    }
+
+    public static function rename(int $teamId, string $name): void
+    {
+        $slug = Slug::unique($name, fn($s) => (bool) Database::fetch('SELECT id FROM teams WHERE slug = ? AND id <> ?', [$s, $teamId]));
+        Database::query('UPDATE teams SET name = ?, slug = ? WHERE id = ?', [$name, $slug, $teamId]);
+    }
+
+    public static function regenerateCode(int $teamId): string
+    {
+        $code = self::generateJoinCode();
+        Database::query('UPDATE teams SET join_code = ? WHERE id = ?', [$code, $teamId]);
+        return $code;
+    }
+
+    public static function delete(int $teamId): void
+    {
+        Database::query('DELETE FROM teams WHERE id = ?', [$teamId]);
     }
 
     private static function generateJoinCode(): string

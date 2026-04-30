@@ -88,6 +88,15 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
     </div>
 <?php endif; ?>
 
+<!-- Logout -->
+<form method="post" action="<?= e(url('/logout')) ?>" class="mb-4">
+    <?= csrf_field() ?>
+    <button type="submit"
+            class="w-full min-h-[48px] rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-red-50 hover:text-red-700 hover:border-red-200">
+        Uitloggen
+    </button>
+</form>
+
 <!-- Recent matches -->
 <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-4">
     <div class="flex items-center justify-between mb-3">

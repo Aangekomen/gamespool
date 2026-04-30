@@ -80,9 +80,13 @@ class App
         $r->post('/teams/join',                                 [TeamController::class, 'join']);
         $r->get('/teams/new',                                   [TeamController::class, 'showCreate']);
         $r->post('/teams',                                      [TeamController::class, 'create']);
+        $r->get('/teams/{id}',                                  [TeamController::class, 'show']);
         $r->post('/teams/{id}/leave',                           [TeamController::class, 'leave']);
+        $r->post('/teams/{id}/transfer-leave',                  [TeamController::class, 'transferAndLeave']);
         $r->post('/teams/{teamId}/members/{userId}/approve',    [TeamController::class, 'approve']);
         $r->post('/teams/{teamId}/members/{userId}/reject',     [TeamController::class, 'reject']);
+        $r->post('/teams/{teamId}/members/{userId}/tag',        [TeamController::class, 'updateMemberTag']);
+        $r->post('/teams/{teamId}/members/{userId}/kick',       [TeamController::class, 'kickMember']);
 
         // Profile
         $r->get('/profile',           [ProfileController::class, 'index']);
@@ -109,6 +113,17 @@ class App
         $r->patch('/admin/devices/{id}',                  [AdminController::class, 'devicesUpdate']);
         $r->delete('/admin/devices/{id}',                 [AdminController::class, 'devicesDestroy']);
         $r->get('/admin/devices/{id}/print',              [AdminController::class, 'devicesPrint']);
+
+        $r->get('/admin/teams',                           [AdminController::class, 'teamsIndex']);
+        $r->get('/admin/teams/{id}/edit',                 [AdminController::class, 'teamsEdit']);
+        $r->patch('/admin/teams/{id}',                    [AdminController::class, 'teamsUpdate']);
+        $r->post('/admin/teams/{id}/regenerate',          [AdminController::class, 'teamsRegenerateCode']);
+        $r->delete('/admin/teams/{id}',                   [AdminController::class, 'teamsDestroy']);
+
+        $r->get('/admin/matches',                         [AdminController::class, 'matchesIndex']);
+        $r->get('/admin/matches/{id}/edit',               [AdminController::class, 'matchesEdit']);
+        $r->patch('/admin/matches/{id}',                  [AdminController::class, 'matchesUpdate']);
+        $r->delete('/admin/matches/{id}',                 [AdminController::class, 'matchesDestroy']);
     }
 
     public function run(): void

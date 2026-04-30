@@ -47,6 +47,19 @@ $inputCls = 'w-full rounded-lg bg-white dark:bg-slate-900 border border-slate-30
         </div>
 
         <div>
+            <label class="block text-sm font-medium text-navy dark:text-slate-100 mb-1.5" for="device_code">
+                Apparaat-code <span class="text-slate-400">(optioneel)</span>
+            </label>
+            <input id="device_code" name="device_code" type="text" maxlength="20" autocomplete="off"
+                   value="<?= e((string) old('device_code')) ?>"
+                   placeholder="bv. K7FXMZ — sta je bij een vaste tafel?"
+                   class="<?= $inputCls ?> font-mono uppercase tracking-wider">
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Vul de 6-letter code in van het apparaat (op de QR-print) zodat de match aan dat apparaat hangt.
+            </p>
+        </div>
+
+        <div>
             <label class="block text-sm font-medium text-navy dark:text-slate-100 mb-2">Deelnemers</label>
             <div id="parts" class="space-y-2"></div>
             <button type="button" onclick="addRow()" class="mt-2 px-3 py-2 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-sm">

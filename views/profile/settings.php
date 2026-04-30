@@ -56,7 +56,7 @@ $inputCls = 'w-full rounded-lg bg-white dark:bg-slate-800 border border-slate-30
         <?= csrf_field() ?>
         <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" required
                class="w-full text-sm text-slate-700 dark:text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-brand-light file:text-brand-dark file:font-semibold hover:file:bg-brand/20">
-        <p class="text-xs text-slate-500 dark:text-slate-400">JPG, PNG of WebP — wordt vierkant bijgesneden naar 256×256.</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">JPG, PNG of WebP, max ~10 MB — wordt server-side bijgesneden tot 256×256 vierkant.</p>
         <button class="w-full min-h-[44px] rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Upload</button>
     </form>
 </details>
