@@ -6,6 +6,7 @@ namespace GamesPool\Core;
 use GamesPool\Controllers\AuthController;
 use GamesPool\Controllers\GameController;
 use GamesPool\Controllers\HomeController;
+use GamesPool\Controllers\MatchController;
 
 class App
 {
@@ -55,6 +56,15 @@ class App
         $r->get('/games/{slug}/edit',     [GameController::class, 'edit']);
         $r->patch('/games/{slug}',        [GameController::class, 'update']);
         $r->delete('/games/{slug}',       [GameController::class, 'destroy']);
+
+        // Matches
+        $r->get('/matches',                       [MatchController::class, 'index']);
+        $r->get('/matches/new',                   [MatchController::class, 'create']);
+        $r->post('/matches',                      [MatchController::class, 'store']);
+        $r->get('/matches/{id}',                  [MatchController::class, 'show']);
+        $r->get('/matches/{id}/record',           [MatchController::class, 'recordForm']);
+        $r->post('/matches/{id}/record',          [MatchController::class, 'record']);
+        $r->post('/matches/{id}/cancel',          [MatchController::class, 'cancel']);
     }
 
     public function run(): void

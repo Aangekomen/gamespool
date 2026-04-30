@@ -1,0 +1,154 @@
+<?php
+declare(strict_types=1);
+
+namespace GamesPool\Models;
+
+use GamesPool\Core\Database;
+use GamesPool\Core\ScoreEngine;
+
+/**
+ * "Match" is a reserved word in PHP 8, so we use GameMatch.
+ */
+class GameMatch
+{
+    public static function find(int $id): ?array
+    {
+        return Database::fetch('SELECT * FROM matches WHERE id = ?', [$id]);
+    }
+
+    public static function findByToken(string $token): ?array
+    {
+        return Database::fetch('SELECT * FROM matches WHERE join_token = ?', [$token]);
+    }
+
+    /**
+     * List recent matches with game name. Optional filter by user (matches the user participated in).
+     */
+    public static function recent(int $limit = 25, ?int $userId = null): array
+    {
+        if ($userId !== null) {
+            return Database::fetchAll(
+                'SELECT m.*, g.name AS game_name, g.slug AS game_slug
+                   FROM matches m
+                   JOIN games g ON g.id = m.game_id
+                  WHERE EXISTS (SELECT 1 FROM match_participants p WHERE p.match_id = m.id AND p.user_id = ?)
+                  ORDER BY m.started_at DESC
+                  LIMIT ' . (int) $limit,
+                [$userId]
+            );
+        }
+        return Database::fetchAll(
+            'SELECT m.*, g.name AS game_name, g.slug AS game_slug
+               FROM matches m
+               JOIN games g ON g.id = m.game_id
+              ORDER BY m.started_at DESC
+              LIMIT ' . (int) $limit
+        );
+    }
+
+    public static function participants(int $matchId): array
+    {
+        return Database::fetchAll(
+            'SELECT p.*, u.display_name, u.avatar_path
+               FROM match_participants p
+               LEFT JOIN users u ON u.id = p.user_id
+              WHERE p.match_id = ?
+              ORDER BY p.points_awarded DESC, p.id ASC',
+            [$matchId]
+        );
+    }
+
+    /**
+     * Create a new match record (in_progress) with participants but no scores yet.
+     */
+    public static function create(int $gameId, ?int $createdBy, array $participants, ?string $label = null): int
+    {
+        $token = bin2hex(random_bytes(8));
+        $matchId = Database::insert(
+            'INSERT INTO matches (game_id, label, state, join_token, created_by) VALUES (?, ?, "in_progress", ?, ?)',
+            [$gameId, $label, $token, $createdBy]
+        );
+
+        foreach ($participants as $p) {
+            Database::query(
+                'INSERT INTO match_participants (match_id, user_id, guest_name, team_id) VALUES (?, ?, ?, ?)',
+                [
+                    $matchId,
+                    !empty($p['user_id'])    ? (int) $p['user_id']    : null,
+                    !empty($p['guest_name']) ? (string) $p['guest_name'] : null,
+                    !empty($p['team_id'])    ? (int) $p['team_id']    : null,
+                ]
+            );
+        }
+        return $matchId;
+    }
+
+    /**
+     * Record results: takes participant rows with raw_score and/or result,
+     * runs the score engine, and writes back points/ratings + completes the match.
+     */
+    public static function recordResults(int $matchId, array $participantInputs): void
+    {
+        $match = self::find($matchId);
+        if (!$match) return;
+        $game = Game::find((int) $match['game_id']);
+        if (!$game) return;
+
+        $existing = self::participants($matchId);
+        $byId = [];
+        foreach ($existing as $row) $byId[(int) $row['id']] = $row;
+
+        // Merge inputs onto existing rows
+        $merged = [];
+        foreach ($participantInputs as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            $base = $byId[$id] ?? [];
+            $merged[] = array_merge($base, [
+                'id'         => $id,
+                'user_id'    => $base['user_id']   ?? null,
+                'guest_name' => $base['guest_name']?? null,
+                'team_id'    => $base['team_id']   ?? null,
+                'raw_score'  => isset($row['raw_score']) ? (int) $row['raw_score'] : null,
+                'result'     => $row['result'] ?? null,
+            ]);
+        }
+
+        $computed = ScoreEngine::compute($game, $merged);
+
+        Database::pdo()->beginTransaction();
+        try {
+            foreach ($computed as $row) {
+                Database::query(
+                    'UPDATE match_participants
+                        SET raw_score = ?, result = ?, points_awarded = ?, rating_before = ?, rating_after = ?
+                      WHERE id = ?',
+                    [
+                        $row['raw_score']     ?? null,
+                        $row['result']        ?? null,
+                        (int) ($row['points_awarded'] ?? 0),
+                        $row['rating_before'] ?? null,
+                        $row['rating_after']  ?? null,
+                        (int) $row['id'],
+                    ]
+                );
+            }
+            Database::query(
+                'UPDATE matches SET state = "completed", ended_at = NOW() WHERE id = ?',
+                [$matchId]
+            );
+            ScoreEngine::persistRatings($game, $computed);
+            Database::pdo()->commit();
+        } catch (\Throwable $e) {
+            if (Database::pdo()->inTransaction()) Database::pdo()->rollBack();
+            throw $e;
+        }
+    }
+
+    public static function cancel(int $matchId): void
+    {
+        Database::query(
+            'UPDATE matches SET state = "cancelled", ended_at = NOW() WHERE id = ? AND state = "in_progress"',
+            [$matchId]
+        );
+    }
+}
