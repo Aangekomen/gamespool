@@ -4,7 +4,10 @@ declare(strict_types=1);
 namespace GamesPool\Controllers;
 
 use GamesPool\Core\Admin;
+use GamesPool\Core\Auth;
+use GamesPool\Core\Config;
 use GamesPool\Core\Database;
+use GamesPool\Core\Mailer;
 use GamesPool\Core\Session;
 use GamesPool\Core\Validator;
 use GamesPool\Models\Device;
@@ -42,6 +45,127 @@ class AdminController
               ORDER BY u.created_at DESC'
         );
         return view('admin/users/index', ['users' => $users]);
+    }
+
+    public function usersShow(string $id): string
+    {
+        Admin::require();
+        $user = Database::fetch(
+            'SELECT u.*, c.name AS company_name
+               FROM users u
+          LEFT JOIN companies c ON c.id = u.company_id
+              WHERE u.id = ?',
+            [(int) $id]
+        );
+        if (!$user) $this->notFound();
+
+        $teams      = Team::forUser((int) $user['id']);
+        $teamIds    = array_map(fn($t) => (int) $t['id'], $teams);
+        $allTeams   = Team::allWithStats();
+        $availableTeams = array_values(array_filter(
+            $allTeams,
+            fn($t) => !in_array((int) $t['id'], $teamIds, true)
+        ));
+
+        return view('admin/users/show', [
+            'user'           => $user,
+            'teams'          => $teams,
+            'availableTeams' => $availableTeams,
+        ]);
+    }
+
+    public function usersToggleAdmin(string $id): void
+    {
+        Admin::require();
+        $uid = (int) $id;
+        if ($uid === (int) Auth::id()) {
+            Session::flash('_flash.error', 'Je kan je eigen admin-status niet wijzigen.');
+            redirect('/admin/users/' . $uid);
+        }
+        $user = Database::fetch('SELECT id, is_admin FROM users WHERE id = ?', [$uid]);
+        if (!$user) $this->notFound();
+        Database::query('UPDATE users SET is_admin = ? WHERE id = ?', [(int) !$user['is_admin'], $uid]);
+        Session::flash('_flash.success', 'Admin-rol bijgewerkt.');
+        redirect('/admin/users/' . $uid);
+    }
+
+    public function usersAddToTeam(string $id): void
+    {
+        Admin::require();
+        $uid = (int) $id;
+        $teamId = (int) ($_POST['team_id'] ?? 0);
+        $role   = ($_POST['role'] ?? 'member') === 'captain' ? 'captain' : 'member';
+        $user = Database::fetch('SELECT id FROM users WHERE id = ?', [$uid]);
+        $team = Team::find($teamId);
+        if (!$user || !$team) {
+            Session::flash('_flash.error', 'Gebruiker of team niet gevonden.');
+            redirect('/admin/users/' . $uid);
+        }
+        Team::addMemberApproved($teamId, $uid, $role);
+        Session::flash('_flash.success', 'Toegevoegd aan ' . $team['name'] . '.');
+        redirect('/admin/users/' . $uid);
+    }
+
+    public function usersRemoveFromTeam(string $id, string $teamId): void
+    {
+        Admin::require();
+        $uid = (int) $id;
+        $tid = (int) $teamId;
+        Team::removeMember($tid, $uid);
+        Session::flash('_flash.success', 'Uit team verwijderd.');
+        redirect('/admin/users/' . $uid);
+    }
+
+    public function usersSendPasswordReset(string $id): void
+    {
+        Admin::require();
+        $uid = (int) $id;
+        $user = Database::fetch('SELECT id, email, first_name FROM users WHERE id = ?', [$uid]);
+        if (!$user) $this->notFound();
+
+        $token = bin2hex(random_bytes(32));
+        Database::query(
+            'UPDATE users SET password_reset_token = ?, password_reset_expires_at = DATE_ADD(NOW(), INTERVAL 24 HOUR) WHERE id = ?',
+            [$token, $uid]
+        );
+
+        $appName = (string) Config::get('app.name', 'FlexiComp');
+        $resetUrl = url('/password/reset/' . $token);
+        $body = "Hallo " . trim((string) $user['first_name']) . ",\n\n"
+              . "Een admin van {$appName} heeft een wachtwoord-reset voor je aangevraagd.\n"
+              . "Stel een nieuw wachtwoord in via deze link (24 uur geldig):\n"
+              . $resetUrl . "\n\n"
+              . "Heb je dit niet aangevraagd? Negeer deze mail.\n\n"
+              . "— {$appName}";
+        Mailer::send((string) $user['email'], "Wachtwoord opnieuw instellen", $body);
+
+        Session::flash('_flash.success', 'Reset-link gemaild naar ' . $user['email'] . '.');
+        redirect('/admin/users/' . $uid);
+    }
+
+    public function usersResendVerification(string $id): void
+    {
+        Admin::require();
+        $uid = (int) $id;
+        $user = Database::fetch('SELECT id, email, first_name, email_verified_at FROM users WHERE id = ?', [$uid]);
+        if (!$user) $this->notFound();
+        if ($user['email_verified_at']) {
+            Session::flash('_flash.success', 'Account is al bevestigd.');
+            redirect('/admin/users/' . $uid);
+        }
+        $token = bin2hex(random_bytes(32));
+        Database::query('UPDATE users SET verification_token = ? WHERE id = ?', [$token, $uid]);
+
+        $appName = (string) Config::get('app.name', 'FlexiComp');
+        $verifyUrl = url('/verify/' . $token);
+        $body = "Hallo " . trim((string) $user['first_name']) . ",\n\n"
+              . "Bevestig je e-mailadres voor {$appName} via deze link:\n"
+              . $verifyUrl . "\n\n"
+              . "— {$appName}";
+        Mailer::send((string) $user['email'], "Bevestig je e-mail voor {$appName}", $body);
+
+        Session::flash('_flash.success', 'Bevestigingsmail verzonden.');
+        redirect('/admin/users/' . $uid);
     }
 
     public function devicesIndex(): string

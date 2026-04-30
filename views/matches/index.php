@@ -25,20 +25,41 @@
     </div>
 <?php else: ?>
     <ul class="space-y-2">
-        <?php foreach ($matches as $m): ?>
+        <?php foreach ($matches as $m):
+            // Build a single status badge: prefer the user's personal outcome
+            // for completed matches; otherwise fall back to match state.
+            $badge = ['Onbekend', 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'];
+            if ($m['state'] === 'waiting') {
+                $badge = ['Wacht', 'bg-amber-100 text-amber-800'];
+            } elseif ($m['state'] === 'in_progress') {
+                $badge = ['Bezig', 'bg-amber-100 text-amber-800'];
+            } elseif ($m['state'] === 'cancelled') {
+                $badge = ['Geannuleerd', 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'];
+            } elseif ($m['state'] === 'completed') {
+                $r = $m['my_result'] ?? null;
+                $badge = match ($r) {
+                    'win'  => ['Gewonnen', 'bg-brand-light text-brand-dark'],
+                    'loss' => ['Verloren', 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300'],
+                    'draw' => ['Gelijk', 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'],
+                    default => ['Afgerond', 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'],
+                };
+            }
+        ?>
             <li>
                 <a href="<?= e(url('/matches/' . $m['id'])) ?>"
-                   class="block rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 hover:bg-slate-50 shadow-card">
+                   class="block rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-card">
                     <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0">
                             <p class="font-semibold text-navy dark:text-slate-100 truncate"><?= e($m['game_name']) ?><?= $m['label'] ? ' — ' . e($m['label']) : '' ?></p>
                             <p class="text-xs text-slate-500 dark:text-slate-400">
                                 <?= e(date('d-m-Y H:i', strtotime((string) $m['started_at']))) ?>
+                                <?php if ($m['state'] === 'completed' && isset($m['my_points'])): ?>
+                                    · <?= (int) $m['my_points'] >= 0 ? '+' : '' ?><?= (int) $m['my_points'] ?> pt
+                                <?php endif; ?>
                             </p>
                         </div>
-                        <span class="shrink-0 text-xs px-2 py-1 rounded-full font-medium
-                            <?= $m['state'] === 'in_progress' ? 'bg-amber-100 text-amber-800' : ($m['state'] === 'completed' ? 'bg-brand-light text-brand-dark' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300') ?>">
-                            <?= $m['state'] === 'in_progress' ? 'Bezig' : ($m['state'] === 'completed' ? 'Afgerond' : 'Geannuleerd') ?>
+                        <span class="shrink-0 text-xs px-2 py-1 rounded-full font-medium <?= $badge[1] ?>">
+                            <?= e($badge[0]) ?>
                         </span>
                     </div>
                 </a>

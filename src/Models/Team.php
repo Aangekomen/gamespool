@@ -169,6 +169,25 @@ class Team
         return 'pending';
     }
 
+    /**
+     * Admin-grade add: insert (or upgrade pending) as approved member.
+     */
+    public static function addMemberApproved(int $teamId, int $userId, string $role = 'member'): void
+    {
+        $existing = self::membership($teamId, $userId);
+        if ($existing) {
+            Database::query(
+                "UPDATE team_members SET status = 'approved' WHERE team_id = ? AND user_id = ?",
+                [$teamId, $userId]
+            );
+            return;
+        }
+        Database::query(
+            "INSERT INTO team_members (team_id, user_id, role, status) VALUES (?, ?, ?, 'approved')",
+            [$teamId, $userId, $role]
+        );
+    }
+
     public static function approveMember(int $teamId, int $userId): void
     {
         Database::query(

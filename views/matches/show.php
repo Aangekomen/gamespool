@@ -28,15 +28,25 @@ $type  = $game['score_type'] ?? 'win_loss';
         <?php foreach ($participants as $p):
             $name = $p['display_name'] ?? 'Onbekend';
             $isWinner = ($p['result'] ?? null) === 'win';
+
+            // Winner card: keep its content readable on the brand-light background
+            // in both light and dark mode (no dark: text overrides).
+            $cardCls = $isWinner
+                ? 'border-brand bg-brand-light'
+                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900';
+            $nameCls   = $isWinner ? 'font-semibold text-navy truncate' : 'font-semibold text-navy dark:text-slate-100 truncate';
+            $subCls    = $isWinner ? 'text-xs text-brand-dark' : 'text-xs text-slate-500 dark:text-slate-400';
+            $bigCls    = $isWinner ? 'text-lg font-bold tabular-nums text-navy' : 'text-lg font-bold tabular-nums text-navy dark:text-slate-100';
+            $avatarCls = $isWinner ? 'bg-white text-brand-dark' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
         ?>
-            <li class="rounded-xl border <?= $isWinner ? 'border-brand bg-brand-light' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900' ?> p-3 flex items-center gap-3 shadow-card">
-                <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-400 shrink-0">
+            <li class="rounded-xl border <?= $cardCls ?> p-3 flex items-center gap-3 shadow-card">
+                <div class="w-10 h-10 rounded-full <?= $avatarCls ?> flex items-center justify-center text-sm font-bold shrink-0">
                     <?= e(strtoupper(mb_substr($name, 0, 1))) ?>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="font-semibold text-navy dark:text-slate-100 truncate"><?= e($name) ?></p>
+                    <p class="<?= $nameCls ?>"><?= e($name) ?></p>
                     <?php if ($match['state'] === 'completed' && $p['result']): ?>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                        <p class="<?= $subCls ?>">
                             <?= match ($p['result']) { 'win' => 'Winst', 'draw' => 'Gelijk', 'loss' => 'Verlies', default => '' } ?>
                             <?php if ($p['raw_score'] !== null): ?> · score <?= e((string) $p['raw_score']) ?><?php endif; ?>
                         </p>
@@ -45,14 +55,14 @@ $type  = $game['score_type'] ?? 'win_loss';
                 <?php if ($match['state'] === 'completed'): ?>
                     <?php if ($type === 'elo' && $p['rating_after'] !== null): ?>
                         <div class="text-right">
-                            <p class="text-lg font-bold text-navy dark:text-slate-100"><?= e((string) $p['rating_after']) ?></p>
+                            <p class="<?= $bigCls ?>"><?= e((string) $p['rating_after']) ?></p>
                             <?php $delta = (int) $p['points_awarded']; ?>
                             <p class="text-xs <?= $delta >= 0 ? 'text-brand-dark' : 'text-red-600' ?>">
                                 <?= $delta >= 0 ? '+' : '' ?><?= e((string) $delta) ?>
                             </p>
                         </div>
                     <?php else: ?>
-                        <span class="text-lg font-bold tabular-nums text-navy dark:text-slate-100"><?= e((string) (int) $p['points_awarded']) ?></span>
+                        <span class="<?= $bigCls ?>"><?= e((string) (int) $p['points_awarded']) ?></span>
                     <?php endif; ?>
                 <?php endif; ?>
             </li>

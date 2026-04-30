@@ -21,7 +21,7 @@
         <?php foreach ($devices as $d): ?>
             <li>
                 <a href="<?= e(url('/admin/devices/' . $d['id'])) ?>"
-                   class="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 hover:bg-slate-50 shadow-card">
+                   class="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-card">
                     <div class="min-w-0">
                         <p class="font-semibold text-navy dark:text-slate-100 truncate"><?= e($d['name']) ?></p>
                         <p class="text-xs text-slate-500 dark:text-slate-400">

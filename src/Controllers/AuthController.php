@@ -169,4 +169,48 @@ class AuthController
         Auth::logout();
         redirect('/login');
     }
-}
+
+    public function showPasswordReset(string $token): string
+    {
+        $token = preg_replace('/[^a-f0-9]/', '', $token) ?? '';
+        $user  = strlen($token) >= 32
+            ? Database::fetch('SELECT id, password_reset_expires_at FROM users WHERE password_reset_token = ?', [$token])
+            : null;
+        $valid = $user
+              && $user['password_reset_expires_at']
+              && strtotime((string) $user['password_reset_expires_at']) >= time();
+        return view('auth/password_reset', [
+            'token'  => $token,
+            'valid'  => (bool) $valid,
+            'errors' => Session::pull('_errors', []),
+        ]);
+    }
+
+    public function resetPassword(string $token): void
+    {
+        $token = preg_replace('/[^a-f0-9]/', '', $token) ?? '';
+        $user  = strlen($token) >= 32
+            ? Database::fetch('SELECT id, password_reset_expires_at FROM users WHERE password_reset_token = ?', [$token])
+            : null;
+        if (!$user || !$user['password_reset_expires_at'] || strtotime((string) $user['password_reset_expires_at']) < time()) {
+            Session::flash('_flash.error', 'De resetlink is ongeldig of verlopen.');
+            redirect('/login');
+        }
+
+        $new     = (string) ($_POST['new_password'] ?? '');
+        $confirm = (string) ($_POST['new_password_confirmation'] ?? '');
+        $errors = [];
+        if (mb_strlen($new) < 8) $errors['new_password'][] = 'Minimaal 8 tekens.';
+        if ($new !== $confirm)   $errors['new_password'][] = 'Bevestiging komt niet overeen.';
+        if (!empty($errors)) {
+            Session::flash('_errors', $errors);
+            redirect('/password/reset/' . $token);
+        }
+
+        Database::query(
+            'UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires_at = NULL WHERE id = ?',
+            [password_hash($new, PASSWORD_DEFAULT), $user['id']]
+        );
+        Session::flash('_flash.success', 'Wachtwoord ingesteld. Log in met je nieuwe wachtwoord.');
+        redirect('/login');
+    }

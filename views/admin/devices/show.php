@@ -34,7 +34,7 @@ $title = $device['name'];
 
     <div class="grid grid-cols-2 gap-2 mt-3">
         <a href="<?= e(url('/admin/devices/' . $device['id'] . '/edit')) ?>"
-           class="text-center rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-navy dark:text-slate-100 hover:bg-slate-50">Bewerken</a>
+           class="text-center rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-navy dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">Bewerken</a>
         <form method="post" action="<?= e(url('/admin/devices/' . $device['id'])) ?>"
               onsubmit="return confirm('Apparaat verwijderen?');">
             <?= csrf_field() ?>

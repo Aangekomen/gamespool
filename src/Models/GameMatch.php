@@ -28,13 +28,15 @@ class GameMatch
     {
         if ($userId !== null) {
             return Database::fetchAll(
-                'SELECT m.*, g.name AS game_name, g.slug AS game_slug
+                'SELECT m.*, g.name AS game_name, g.slug AS game_slug,
+                        (SELECT mp.result         FROM match_participants mp WHERE mp.match_id = m.id AND mp.user_id = ? LIMIT 1) AS my_result,
+                        (SELECT mp.points_awarded FROM match_participants mp WHERE mp.match_id = m.id AND mp.user_id = ? LIMIT 1) AS my_points
                    FROM matches m
                    JOIN games g ON g.id = m.game_id
                   WHERE EXISTS (SELECT 1 FROM match_participants p WHERE p.match_id = m.id AND p.user_id = ?)
                   ORDER BY m.started_at DESC
                   LIMIT ' . (int) $limit,
-                [$userId]
+                [$userId, $userId, $userId]
             );
         }
         return Database::fetchAll(

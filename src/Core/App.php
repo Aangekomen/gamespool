@@ -55,6 +55,8 @@ class App
         $r->post('/logout',   [AuthController::class, 'logout']);
         $r->get('/verify/{token}',     [AuthController::class, 'verify']);
         $r->post('/verify/resend',     [AuthController::class, 'resendVerification']);
+        $r->get('/password/reset/{token}',  [AuthController::class, 'showPasswordReset']);
+        $r->post('/password/reset/{token}', [AuthController::class, 'resetPassword']);
 
         // Games
         $r->get('/games',                 [GameController::class, 'index']);
@@ -106,7 +108,13 @@ class App
 
         // Admin
         $r->get('/admin',                                 [AdminController::class, 'index']);
-        $r->get('/admin/users',                           [AdminController::class, 'usersIndex']);
+        $r->get('/admin/users',                                          [AdminController::class, 'usersIndex']);
+        $r->get('/admin/users/{id}',                                     [AdminController::class, 'usersShow']);
+        $r->post('/admin/users/{id}/toggle-admin',                       [AdminController::class, 'usersToggleAdmin']);
+        $r->post('/admin/users/{id}/teams',                              [AdminController::class, 'usersAddToTeam']);
+        $r->post('/admin/users/{id}/teams/{teamId}/remove',              [AdminController::class, 'usersRemoveFromTeam']);
+        $r->post('/admin/users/{id}/send-reset',                         [AdminController::class, 'usersSendPasswordReset']);
+        $r->post('/admin/users/{id}/resend-verification',                [AdminController::class, 'usersResendVerification']);
         $r->get('/admin/devices',                         [AdminController::class, 'devicesIndex']);
         $r->get('/admin/devices/new',                     [AdminController::class, 'devicesNew']);
         $r->post('/admin/devices',                        [AdminController::class, 'devicesStore']);

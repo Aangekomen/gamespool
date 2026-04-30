@@ -18,7 +18,7 @@ $title = 'GamesPool';
         </p>
         <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
             <a href="<?= e(url('/register')) ?>" class="inline-flex justify-center items-center px-5 py-3 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Account aanmaken</a>
-            <a href="<?= e(url('/login')) ?>" class="inline-flex justify-center items-center px-5 py-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-navy dark:text-slate-100 hover:bg-slate-50">Inloggen</a>
+            <a href="<?= e(url('/login')) ?>" class="inline-flex justify-center items-center px-5 py-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-navy dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">Inloggen</a>
         </div>
     </section>
 
@@ -177,7 +177,7 @@ $title = 'GamesPool';
             <ul class="divide-y divide-slate-100 dark:divide-slate-800">
                 <?php foreach ($recentMatches as $m): ?>
                     <li>
-                        <a href="<?= e(url('/matches/' . $m['id'])) ?>" class="flex items-center justify-between py-2.5 hover:bg-slate-50 -mx-2 px-2 rounded-md">
+                        <a href="<?= e(url('/matches/' . $m['id'])) ?>" class="flex items-center justify-between py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 -mx-2 px-2 rounded-md">
                             <div class="min-w-0">
                                 <p class="text-sm font-semibold text-navy dark:text-slate-100 truncate"><?= e($m['game_name']) ?><?= $m['label'] ? ' · ' . e($m['label']) : '' ?></p>
                                 <p class="text-xs text-slate-500 dark:text-slate-400"><?= e(date('d-m H:i', strtotime((string) $m['started_at']))) ?></p>
