@@ -46,12 +46,19 @@ class Tournament
 
     public static function create(string $name, int $gameId, int $maxPlayers, int $ownerId): int
     {
-        if (!in_array($maxPlayers, self::SIZES, true)) $maxPlayers = 8;
+        $maxPlayers = max(2, min(self::MAX_PLAYERS, $maxPlayers));
         $slug = Slug::unique($name, fn ($s) => (bool) Database::fetch('SELECT id FROM tournaments WHERE slug = ?', [$s]));
         return Database::insert(
             'INSERT INTO tournaments (name, slug, game_id, max_players, owner_id) VALUES (?, ?, ?, ?, ?)',
             [$name, $slug, $gameId, $maxPlayers, $ownerId]
         );
+    }
+
+    /** Eerstvolgende macht-van-2 ≥ n; minimaal 2. */
+    public static function bracketSize(int $n): int
+    {
+        if ($n < 2) return 2;
+        return (int) (2 ** ceil(log(max(2, $n), 2)));
     }
 
     public static function participants(int $tournamentId): array

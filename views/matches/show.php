@@ -240,19 +240,30 @@ $type  = $game['score_type'] ?? 'win_loss';
             <?php if (empty($series['target']) && empty($series)): ?>
                 <!-- Optie: meteen een Best-of-N serie starten -->
                 <div class="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 mb-2 shadow-card">
-                    <p class="text-xs font-bold text-navy dark:text-slate-100 mb-2">Speel als serie?</p>
-                    <div class="grid grid-cols-4 gap-2 text-sm">
-                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light font-semibold">
-                            <input type="radio" name="best_of" value="0" checked class="sr-only"> Los
+                    <p class="text-sm font-bold text-navy dark:text-slate-100">Wil je er een serie van maken?</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                        Speel meerdere potjes achter elkaar. Wie eerst de helft + 1 wint, wint de hele serie.
+                    </p>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <label class="flex flex-col items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2.5 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light">
+                            <input type="radio" name="best_of" value="0" checked class="sr-only">
+                            <span class="font-bold">Eenmalig</span>
+                            <span class="text-[11px] opacity-70">alleen deze rematch</span>
                         </label>
-                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light font-semibold">
-                            <input type="radio" name="best_of" value="3" class="sr-only"> Bo3
+                        <label class="flex flex-col items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2.5 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light">
+                            <input type="radio" name="best_of" value="3" class="sr-only">
+                            <span class="font-bold">Best of 3</span>
+                            <span class="text-[11px] opacity-70">eerst bij 2 winsten</span>
                         </label>
-                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light font-semibold">
-                            <input type="radio" name="best_of" value="5" class="sr-only"> Bo5
+                        <label class="flex flex-col items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2.5 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light">
+                            <input type="radio" name="best_of" value="5" class="sr-only">
+                            <span class="font-bold">Best of 5</span>
+                            <span class="text-[11px] opacity-70">eerst bij 3 winsten</span>
                         </label>
-                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light font-semibold">
-                            <input type="radio" name="best_of" value="7" class="sr-only"> Bo7
+                        <label class="flex flex-col items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2.5 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light">
+                            <input type="radio" name="best_of" value="7" class="sr-only">
+                            <span class="font-bold">Best of 7</span>
+                            <span class="text-[11px] opacity-70">eerst bij 4 winsten</span>
                         </label>
                     </div>
                 </div>
