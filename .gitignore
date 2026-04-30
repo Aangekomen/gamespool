@@ -1,0 +1,14 @@
+/vendor/
+/config/config.php
+/public/uploads/avatars/*
+/public/uploads/logos/*
+!/public/uploads/avatars/.gitkeep
+!/public/uploads/logos/.gitkeep
+.env
+.env.local
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
+/storage/
