@@ -131,21 +131,6 @@ $title = 'GamesPool';
         + Start nieuwe match
     </a>
 
-    <!-- Quick start per game -->
-    <?php if (!empty($games)): ?>
-        <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-4">
-            <h3 class="text-sm font-bold text-navy dark:text-slate-100 mb-3">Snel starten</h3>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <?php foreach ($games as $g): ?>
-                    <a href="<?= e(url('/matches/new?game_id=' . (int) $g['id'])) ?>"
-                       class="rounded-lg bg-surface dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-3 py-2.5 text-sm font-medium text-navy dark:text-slate-100 hover:border-brand hover:bg-brand-light transition">
-                        <?= e($g['name']) ?>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    <?php endif; ?>
-
     <!-- Two stat cards -->
     <div class="grid grid-cols-2 gap-3 mb-4">
         <a href="<?= e(url('/leaderboard?period=week')) ?>"
