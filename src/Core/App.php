@@ -117,6 +117,7 @@ class App
 
         // Admin
         $r->get('/admin',                                 [AdminController::class, 'index']);
+        $r->get('/admin/stats',                           [AdminController::class, 'stats']);
         $r->get('/admin/users',                                          [AdminController::class, 'usersIndex']);
         $r->get('/admin/users/{id}',                                     [AdminController::class, 'usersShow']);
         $r->post('/admin/users/{id}/toggle-admin',                       [AdminController::class, 'usersToggleAdmin']);

@@ -6,6 +6,8 @@
 /** @var array $recentMatches */
 /** @var array $streak */
 /** @var array $badges */
+/** @var ?array $nemesis */
+/** @var ?array $favOpponent */
 $title = 'Profiel';
 $avatarSrc = !empty($user['avatar_path'])
     ? url('/uploads/avatars/' . $user['avatar_path']) . '?v=' . substr((string) ($user['avatar_path']), 0, 6)
@@ -94,6 +96,48 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
         </div>
     </div>
 </div>
+
+<!-- Rivaliteit (laatste 90 dagen) -->
+<?php if (!empty($nemesis) || !empty($favOpponent)): ?>
+    <?php $rivalCard = function (array $opp, string $kind) {
+        $isNemesis = $kind === 'nemesis';
+        $emoji = $isNemesis ? '😈' : '🥷';
+        $title = $isNemesis ? 'Nemesis' : 'Comfortabele tegenstander';
+        $subtitle = $isNemesis
+            ? 'Verslaat jou vaker dan andersom'
+            : 'Tegen wie je het beste presteert';
+        $box = $isNemesis
+            ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/40'
+            : 'bg-brand-light border-brand/30';
+        $accent = $isNemesis ? 'text-red-700 dark:text-red-300' : 'text-brand-dark';
+        $you = (int) $opp['your_wins'];
+        $them = (int) $opp['their_wins'];
+        $matches = (int) $opp['matches'];
+        $name = (string) ($opp['display_name'] ?? '?');
+        $avatar = !empty($opp['avatar_path']) ? url('/uploads/avatars/' . $opp['avatar_path']) : null;
+    ?>
+        <div class="rounded-2xl border <?= $box ?> p-3 flex items-center gap-3 shadow-card">
+            <div class="w-10 h-10 rounded-full bg-white/40 dark:bg-slate-900/40 flex items-center justify-center text-lg shrink-0 overflow-hidden">
+                <?php if ($avatar): ?>
+                    <img src="<?= e($avatar) ?>" alt="" class="w-full h-full object-cover">
+                <?php else: ?>
+                    <span><?= $emoji ?></span>
+                <?php endif; ?>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-[10px] uppercase tracking-wide font-bold <?= $accent ?>"><?= $emoji ?> <?= e($title) ?></p>
+                <p class="font-bold text-navy dark:text-slate-100 truncate"><?= e($name) ?></p>
+                <p class="text-[11px] text-slate-600 dark:text-slate-300 truncate">
+                    <?= $you ?>–<?= $them ?> over <?= $matches ?> wedstrijden · <?= e($subtitle) ?>
+                </p>
+            </div>
+        </div>
+    <?php }; ?>
+    <div class="grid <?= ($nemesis && $favOpponent) ? 'sm:grid-cols-2' : 'grid-cols-1' ?> gap-2 mb-4">
+        <?php if (!empty($nemesis)) $rivalCard($nemesis, 'nemesis'); ?>
+        <?php if (!empty($favOpponent)) $rivalCard($favOpponent, 'fav'); ?>
+    </div>
+<?php endif; ?>
 
 <!-- Badges -->
 <?php if (!empty($badges)):

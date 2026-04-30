@@ -30,6 +30,8 @@ class ProfileController
             'recentMatches' => GameMatch::recent(5, $userId),
             'streak'        => Achievements::streak($userId),
             'badges'        => Achievements::badges($userId),
+            'nemesis'       => Achievements::nemesis($userId),
+            'favOpponent'   => Achievements::favoriteOpponent($userId),
         ]);
     }
 

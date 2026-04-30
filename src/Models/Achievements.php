@@ -72,6 +72,70 @@ class Achievements
      * Verdiende badges — uit aggregaties.
      * Elke badge: ['key', 'label', 'emoji', 'description', 'earned' => bool, 'progress'?]
      */
+    /**
+     * Vind je nemesis: tegenstander die jou de laatste 90 dagen het vaakst
+     * heeft verslagen (en vaker dan andersom). Geeft null als er geen
+     * duidelijke rivaliteit is (te weinig matches of evenveel winsten).
+     *
+     * Levert: ['user_id', 'display_name', 'avatar_path', 'their_wins',
+     *          'your_wins', 'matches'] of null.
+     */
+    public static function nemesis(int $userId): ?array
+    {
+        $rows = Database::fetchAll(
+            "SELECT opp.user_id AS opp_id, u.display_name, u.avatar_path,
+                    SUM(CASE WHEN opp.result = 'win'  THEN 1 ELSE 0 END) AS their_wins,
+                    SUM(CASE WHEN me.result  = 'win'  THEN 1 ELSE 0 END) AS your_wins,
+                    COUNT(*) AS matches
+               FROM match_participants me
+               JOIN matches m  ON m.id  = me.match_id
+               JOIN match_participants opp
+                 ON opp.match_id = me.match_id AND opp.user_id <> me.user_id
+               JOIN users u ON u.id = opp.user_id
+              WHERE me.user_id = ?
+                AND m.state = 'completed'
+                AND m.ended_at >= (NOW() - INTERVAL 90 DAY)
+                AND (SELECT COUNT(*) FROM match_participants pc WHERE pc.match_id = m.id) = 2
+              GROUP BY opp.user_id, u.display_name, u.avatar_path
+             HAVING matches >= 3
+                AND their_wins > your_wins
+              ORDER BY (their_wins - your_wins) DESC, their_wins DESC
+              LIMIT 1",
+            [$userId]
+        );
+        return $rows[0] ?? null;
+    }
+
+    /**
+     * Tegenstander tegen wie je het beste presteert (jouw "favorite victim",
+     * vriendelijker geframed als "comfortabele tegenstander").
+     */
+    public static function favoriteOpponent(int $userId): ?array
+    {
+        $rows = Database::fetchAll(
+            "SELECT opp.user_id AS opp_id, u.display_name, u.avatar_path,
+                    SUM(CASE WHEN me.result  = 'win'  THEN 1 ELSE 0 END) AS your_wins,
+                    SUM(CASE WHEN opp.result = 'win'  THEN 1 ELSE 0 END) AS their_wins,
+                    COUNT(*) AS matches
+               FROM match_participants me
+               JOIN matches m  ON m.id  = me.match_id
+               JOIN match_participants opp
+                 ON opp.match_id = me.match_id AND opp.user_id <> me.user_id
+               JOIN users u ON u.id = opp.user_id
+              WHERE me.user_id = ?
+                AND m.state = 'completed'
+                AND m.ended_at >= (NOW() - INTERVAL 90 DAY)
+                AND (SELECT COUNT(*) FROM match_participants pc WHERE pc.match_id = m.id) = 2
+              GROUP BY opp.user_id, u.display_name, u.avatar_path
+             HAVING matches >= 3
+                AND your_wins > their_wins
+              ORDER BY (your_wins - their_wins) DESC, your_wins DESC
+              LIMIT 1",
+            [$userId]
+        );
+        return $rows[0] ?? null;
+    }
+
     public static function badges(int $userId): array
     {
         $stat = Database::fetch(

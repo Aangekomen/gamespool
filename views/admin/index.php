@@ -63,6 +63,14 @@
         </div>
         <span class="text-brand-dark">→</span>
     </a>
+    <a href="<?= e(url('/admin/stats')) ?>"
+       class="flex items-center justify-between rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card hover:border-brand">
+        <div>
+            <p class="font-semibold text-navy dark:text-slate-100">📊 Bar stats</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Piekuren, populaire spellen, drukste tafels.</p>
+        </div>
+        <span class="text-brand-dark">→</span>
+    </a>
     <a href="<?= e(url('/tv')) ?>" target="_blank" rel="noopener"
        class="flex items-center justify-between rounded-xl bg-navy text-white border border-navy-soft p-4 shadow-card hover:bg-navy-soft">
         <div>

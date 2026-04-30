@@ -7,7 +7,7 @@ use GamesPool\Core\Database;
 
 class Leaderboard
 {
-    public const PERIODS = ['live', 'day', 'week', 'month', 'lifetime'];
+    public const PERIODS = ['live', 'day', 'week', 'season', 'month', 'lifetime'];
 
     public static function periodLabel(string $p): string
     {
@@ -15,6 +15,7 @@ class Leaderboard
             'live'     => 'Live (laatste 24u)',
             'day'      => 'Vandaag',
             'week'     => 'Deze week',
+            'season'   => 'Seizoen ' . self::currentSeasonLabel(),
             'month'    => 'Deze maand',
             'lifetime' => 'Lifetime',
             default    => $p,
@@ -23,16 +24,49 @@ class Leaderboard
 
     /**
      * Returns the lower bound timestamp for a period, or null for lifetime.
+     * Seizoen = kalenderkwartaal (Q1 jan-mrt, Q2 apr-jun, ...).
      */
     public static function since(string $period): ?string
     {
         return match ($period) {
-            'live'  => date('Y-m-d H:i:s', strtotime('-24 hours')),
-            'day'   => date('Y-m-d 00:00:00'),
-            'week'  => date('Y-m-d 00:00:00', strtotime('monday this week')),
-            'month' => date('Y-m-01 00:00:00'),
-            default => null,
+            'live'   => date('Y-m-d H:i:s', strtotime('-24 hours')),
+            'day'    => date('Y-m-d 00:00:00'),
+            'week'   => date('Y-m-d 00:00:00', strtotime('monday this week')),
+            'month'  => date('Y-m-01 00:00:00'),
+            'season' => self::seasonStart(),
+            default  => null,
         };
+    }
+
+    /**
+     * Begin van het huidige seizoen (1e dag van het kwartaal).
+     */
+    public static function seasonStart(): string
+    {
+        $month = (int) date('n');
+        $startMonth = (int) (floor(($month - 1) / 3) * 3) + 1;
+        return date('Y-' . str_pad((string) $startMonth, 2, '0', STR_PAD_LEFT) . '-01 00:00:00');
+    }
+
+    /**
+     * Korte label, bv. "Q2 2026".
+     */
+    public static function currentSeasonLabel(): string
+    {
+        $q = (int) ceil(((int) date('n')) / 3);
+        return 'Q' . $q . ' ' . date('Y');
+    }
+
+    /**
+     * Aantal dagen tot eind van het huidige seizoen.
+     */
+    public static function seasonDaysLeft(): int
+    {
+        $month = (int) date('n');
+        $endMonth = (int) (floor(($month - 1) / 3) * 3) + 3;
+        $endDate = date('Y-' . str_pad((string) $endMonth, 2, '0', STR_PAD_LEFT) . '-01 00:00:00');
+        $endTs = strtotime('+1 month', strtotime($endDate)) - 1;
+        return max(0, (int) floor(($endTs - time()) / 86400));
     }
 
     /**

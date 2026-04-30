@@ -31,6 +31,103 @@ class AdminController
         ]);
     }
 
+    /**
+     * Bar-stats dashboard: piekuren, populaire spellen, drukste tafels, etc.
+     * Bedoeld voor de bar-eigenaar om te zien wanneer er actie is.
+     */
+    public function stats(): string
+    {
+        Admin::require();
+
+        // Totalen laatste 30 dagen
+        $totals = Database::fetch(
+            "SELECT COUNT(*) AS matches_30d,
+                    COALESCE(SUM(TIMESTAMPDIFF(MINUTE, started_at, IFNULL(ended_at, NOW()))),0) AS minutes_30d
+               FROM matches
+              WHERE state = 'completed' AND ended_at >= (NOW() - INTERVAL 30 DAY)"
+        ) ?? ['matches_30d' => 0, 'minutes_30d' => 0];
+
+        $newUsers30 = (int) (Database::fetch(
+            "SELECT COUNT(*) c FROM users WHERE created_at >= (NOW() - INTERVAL 30 DAY)"
+        )['c'] ?? 0);
+
+        // Per uur (0-23) — laatste 30 dagen
+        $byHour = Database::fetchAll(
+            "SELECT HOUR(started_at) AS hr, COUNT(*) AS c
+               FROM matches
+              WHERE started_at >= (NOW() - INTERVAL 30 DAY)
+                AND state IN ('completed','in_progress','waiting')
+              GROUP BY HOUR(started_at)
+              ORDER BY hr"
+        );
+        $hours = array_fill(0, 24, 0);
+        foreach ($byHour as $r) $hours[(int) $r['hr']] = (int) $r['c'];
+
+        // Per weekdag (0=zo … 6=za) — laatste 90 dagen
+        $byDow = Database::fetchAll(
+            "SELECT DAYOFWEEK(started_at) - 1 AS dow, COUNT(*) AS c
+               FROM matches
+              WHERE started_at >= (NOW() - INTERVAL 90 DAY)
+                AND state IN ('completed','in_progress','waiting')
+              GROUP BY dow
+              ORDER BY dow"
+        );
+        $days = array_fill(0, 7, 0);
+        foreach ($byDow as $r) $days[(int) $r['dow']] = (int) $r['c'];
+
+        // Populairste spellen
+        $topGames = Database::fetchAll(
+            "SELECT g.id, g.name, g.slug,
+                    COUNT(m.id) AS matches,
+                    COALESCE(SUM(TIMESTAMPDIFF(MINUTE, m.started_at, IFNULL(m.ended_at, NOW()))),0) AS minutes
+               FROM games g
+          LEFT JOIN matches m ON m.game_id = g.id
+                          AND m.started_at >= (NOW() - INTERVAL 30 DAY)
+                          AND m.state IN ('completed','in_progress')
+              GROUP BY g.id, g.name, g.slug
+              ORDER BY matches DESC
+              LIMIT 8"
+        );
+
+        // Drukste tafels
+        $topDevices = Database::fetchAll(
+            "SELECT d.id, d.name, d.code,
+                    COUNT(m.id) AS matches,
+                    COALESCE(SUM(TIMESTAMPDIFF(MINUTE, m.started_at, IFNULL(m.ended_at, NOW()))),0) AS minutes
+               FROM devices d
+          LEFT JOIN matches m ON m.device_id = d.id
+                          AND m.started_at >= (NOW() - INTERVAL 30 DAY)
+                          AND m.state IN ('completed','in_progress')
+              GROUP BY d.id, d.name, d.code
+              ORDER BY matches DESC
+              LIMIT 8"
+        );
+
+        // Groei: nieuwe gebruikers per week, laatste 8 weken
+        $growth = Database::fetchAll(
+            "SELECT YEARWEEK(created_at, 1) AS yw,
+                    DATE(MIN(created_at)) AS week_start,
+                    COUNT(*) AS c
+               FROM users
+              WHERE created_at >= (NOW() - INTERVAL 8 WEEK)
+              GROUP BY yw
+              ORDER BY yw"
+        );
+
+        return view('admin/stats', [
+            'totals'    => [
+                'matches_30d' => (int) $totals['matches_30d'],
+                'hours_30d'   => (int) round(((int) $totals['minutes_30d']) / 60),
+                'new_users_30d' => $newUsers30,
+            ],
+            'hours'     => $hours,
+            'days'      => $days,
+            'topGames'  => $topGames,
+            'topDevices'=> $topDevices,
+            'growth'    => $growth,
+        ]);
+    }
+
     public function usersIndex(): string
     {
         Admin::require();

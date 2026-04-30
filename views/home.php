@@ -211,6 +211,89 @@ $title = 'GamesPool';
     </div>
 <?php endif; ?>
 
+<?php if (!($guest ?? true)): ?>
+<!-- Eerste-keer tour: 3 stappen zodat nieuwe spelers weten wat ze kunnen doen -->
+<div id="tourModal"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 px-4"
+     role="dialog" aria-modal="true">
+    <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-card overflow-hidden">
+        <div class="bg-navy text-white px-5 py-4">
+            <p class="text-xs uppercase tracking-widest text-white/60 font-bold">Welkom bij FlexiComp</p>
+            <h2 class="text-xl font-bold mt-1">Zo werkt het</h2>
+        </div>
+        <div id="tourSteps">
+            <div class="tour-step px-5 py-6" data-step="1">
+                <div class="text-5xl text-center mb-3">📷</div>
+                <h3 class="text-base font-bold text-navy dark:text-slate-100 text-center mb-2">1. Scan een tafel</h3>
+                <p class="text-sm text-slate-600 dark:text-slate-300 text-center">
+                    Tik op <strong>Scan apparaat</strong>, richt je camera op de QR op de tafel en je match start vanzelf.
+                </p>
+            </div>
+            <div class="tour-step px-5 py-6 hidden" data-step="2">
+                <div class="text-5xl text-center mb-3">🏆</div>
+                <h3 class="text-base font-bold text-navy dark:text-slate-100 text-center mb-2">2. Speel & verdien punten</h3>
+                <p class="text-sm text-slate-600 dark:text-slate-300 text-center">
+                    Voer de uitslag in op je telefoon. Win-streaks, badges en je seizoens-rang lopen vanzelf bij.
+                </p>
+            </div>
+            <div class="tour-step px-5 py-6 hidden" data-step="3">
+                <div class="text-5xl text-center mb-3">👥</div>
+                <h3 class="text-base font-bold text-navy dark:text-slate-100 text-center mb-2">3. Sluit aan bij een team</h3>
+                <p class="text-sm text-slate-600 dark:text-slate-300 text-center">
+                    Vraag je captain om een 6-cijferige code, of begin er zelf één. Teams hebben hun eigen leaderboard.
+                </p>
+            </div>
+        </div>
+        <div class="px-5 py-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+            <button id="tourSkip" type="button"
+                    class="text-xs text-slate-500 dark:text-slate-400 hover:text-navy">
+                Overslaan
+            </button>
+            <div id="tourDots" class="flex items-center gap-1.5"></div>
+            <button id="tourNext" type="button"
+                    class="text-sm font-semibold text-white bg-brand hover:bg-brand-dark px-4 py-2 rounded-md">
+                Volgende →
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    const KEY = 'fc_tour_done';
+    try { if (localStorage.getItem(KEY)) return; } catch (e) {}
+    const modal = document.getElementById('tourModal');
+    if (!modal) return;
+    const steps = Array.from(document.querySelectorAll('.tour-step'));
+    const dots = document.getElementById('tourDots');
+    const nextBtn = document.getElementById('tourNext');
+    const skipBtn = document.getElementById('tourSkip');
+    let idx = 0;
+    steps.forEach((_, i) => {
+        const d = document.createElement('span');
+        d.className = 'inline-block rounded-full transition ' + (i === 0 ? 'w-6 h-2 bg-brand' : 'w-2 h-2 bg-slate-300 dark:bg-slate-700');
+        dots.appendChild(d);
+    });
+    function show(i) {
+        steps[idx].classList.add('hidden');
+        dots.children[idx].className = 'inline-block w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700 transition';
+        idx = i;
+        steps[idx].classList.remove('hidden');
+        dots.children[idx].className = 'inline-block w-6 h-2 rounded-full bg-brand transition';
+        nextBtn.textContent = (idx === steps.length - 1) ? 'Aan de slag' : 'Volgende →';
+    }
+    function done() {
+        try { localStorage.setItem(KEY, '1'); } catch (e) {}
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+    nextBtn.addEventListener('click', () => idx === steps.length - 1 ? done() : show(idx + 1));
+    skipBtn.addEventListener('click', done);
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+})();
+</script>
+<?php endif; ?>
+
 <?php if (!($guest ?? true) && empty($hasTeam)): ?>
     <!-- Popup: speler heeft nog geen team -->
     <div id="noTeamModal"

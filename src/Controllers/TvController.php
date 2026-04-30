@@ -27,9 +27,13 @@ class TvController
         );
 
         return view('tv/index', [
-            'active'    => GameMatch::active(8),
-            'top'       => array_slice(Leaderboard::players('lifetime'), 0, 10),
-            'devices'   => $devices,
+            'active'      => GameMatch::active(8),
+            'top'         => array_slice(Leaderboard::players('lifetime'), 0, 10),
+            'topSeason'   => array_slice(Leaderboard::players('season'),  0, 10),
+            'topWeek'     => array_slice(Leaderboard::players('week'),     0, 5),
+            'devices'     => $devices,
+            'seasonLabel' => Leaderboard::currentSeasonLabel(),
+            'seasonDays'  => Leaderboard::seasonDaysLeft(),
         ]);
     }
 }
