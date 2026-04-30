@@ -40,6 +40,24 @@ foreach ($pdo->query('SELECT filename FROM migrations') as $row) {
 $files = glob(BASE_PATH . '/migrations/*.sql') ?: [];
 sort($files);
 
+// MySQL fout-codes die "wijziging is al doorgevoerd" betekenen — we
+// behandelen ze als no-op zodat half-toegepaste migraties of handmatig
+// aangepaste schema's niet alles blokkeren.
+$idempotentCodes = [
+    '1050', // Table '...' already exists
+    '1060', // Duplicate column name
+    '1061', // Duplicate key name
+    '1091', // Can't DROP, check it exists
+    '1826', // Duplicate foreign key constraint name
+];
+function isIdempotent(\Throwable $e, array $codes): bool {
+    $msg = $e->getMessage();
+    foreach ($codes as $c) {
+        if (str_contains($msg, $c)) return true;
+    }
+    return false;
+}
+
 $ran = 0;
 foreach ($files as $file) {
     $name = basename($file);
@@ -53,22 +71,37 @@ foreach ($files as $file) {
         fwrite(STDERR, "  could not read {$file}\n");
         exit(1);
     }
-    try {
-        $pdo->beginTransaction();
-        // Naive split on `;` at end of line — sufficient for our schema files
-        $statements = array_filter(array_map('trim', preg_split('/;\s*\n/m', $sql)));
-        foreach ($statements as $stmt) {
-            if ($stmt === '' || str_starts_with($stmt, '--')) continue;
+    // Geen omhullende transactie: DDL committeert in MySQL toch impliciet,
+    // en bij idempotente fouten willen we per-statement door kunnen.
+    $statements = array_filter(array_map('trim', preg_split('/;\s*\n/m', $sql)));
+    $skipped = 0;
+    $hardError = null;
+    foreach ($statements as $stmt) {
+        if ($stmt === '' || str_starts_with($stmt, '--')) continue;
+        try {
             $pdo->exec($stmt);
+        } catch (\Throwable $e) {
+            if (isIdempotent($e, $idempotentCodes)) {
+                $skipped++;
+                echo "  ~ skipped (al toegepast): " . substr(preg_replace('/\s+/', ' ', $stmt), 0, 80) . "\n";
+                continue;
+            }
+            $hardError = $e;
+            break;
         }
-        $ins = $pdo->prepare('INSERT INTO migrations (filename) VALUES (?)');
-        $ins->execute([$name]);
-        $pdo->commit();
+    }
+    if ($hardError) {
+        fwrite(STDERR, "  FAILED: " . $hardError->getMessage() . "\n");
+        exit(1);
+    }
+    try {
+        $pdo->prepare('INSERT INTO migrations (filename) VALUES (?)')->execute([$name]);
         $ran++;
-        echo "  ok\n";
+        echo $skipped > 0
+            ? "  ok ({$skipped} idempotente statement(s) overgeslagen)\n"
+            : "  ok\n";
     } catch (\Throwable $e) {
-        if ($pdo->inTransaction()) $pdo->rollBack();
-        fwrite(STDERR, "  FAILED: " . $e->getMessage() . "\n");
+        fwrite(STDERR, "  FAILED bij registratie: " . $e->getMessage() . "\n");
         exit(1);
     }
 }
