@@ -3,35 +3,35 @@
 
 <div class="flex items-center justify-between mb-4">
     <div>
-        <h1 class="text-2xl font-bold">Matches</h1>
-        <p class="text-slate-400 text-sm">Recent gespeelde en lopende potjes.</p>
+        <h1 class="text-2xl font-bold text-navy">Matches</h1>
+        <p class="text-slate-500 text-sm">Recent gespeelde en lopende potjes.</p>
     </div>
     <a href="<?= e(url('/matches/new')) ?>"
-       class="inline-flex items-center px-4 py-2 rounded-lg bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400">
+       class="inline-flex items-center px-4 py-2 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">
         + Nieuwe match
     </a>
 </div>
 
 <?php if (empty($matches)): ?>
-    <div class="rounded-xl border border-slate-800 bg-slate-900 p-8 text-center">
-        <p class="text-slate-300">Nog geen matches gespeeld.</p>
-        <a href="<?= e(url('/matches/new')) ?>" class="inline-block mt-4 px-4 py-2 rounded-lg bg-emerald-500 text-slate-950 font-semibold">Start je eerste match</a>
+    <div class="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-card">
+        <p class="text-slate-600">Nog geen matches gespeeld.</p>
+        <a href="<?= e(url('/matches/new')) ?>" class="inline-block mt-4 px-4 py-2 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Start je eerste match</a>
     </div>
 <?php else: ?>
     <ul class="space-y-2">
         <?php foreach ($matches as $m): ?>
             <li>
                 <a href="<?= e(url('/matches/' . $m['id'])) ?>"
-                   class="block rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 hover:bg-slate-800/70">
+                   class="block rounded-xl border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50 shadow-card">
                     <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="font-semibold truncate"><?= e($m['game_name']) ?><?= $m['label'] ? ' — ' . e($m['label']) : '' ?></p>
-                            <p class="text-xs text-slate-400">
+                            <p class="font-semibold text-navy truncate"><?= e($m['game_name']) ?><?= $m['label'] ? ' — ' . e($m['label']) : '' ?></p>
+                            <p class="text-xs text-slate-500">
                                 <?= e(date('d-m-Y H:i', strtotime((string) $m['started_at']))) ?>
                             </p>
                         </div>
-                        <span class="shrink-0 text-xs px-2 py-1 rounded-full
-                            <?= $m['state'] === 'in_progress' ? 'bg-amber-500/20 text-amber-300' : ($m['state'] === 'completed' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300') ?>">
+                        <span class="shrink-0 text-xs px-2 py-1 rounded-full font-medium
+                            <?= $m['state'] === 'in_progress' ? 'bg-amber-100 text-amber-800' : ($m['state'] === 'completed' ? 'bg-brand-light text-brand-dark' : 'bg-slate-100 text-slate-600') ?>">
                             <?= $m['state'] === 'in_progress' ? 'Bezig' : ($m['state'] === 'completed' ? 'Afgerond' : 'Geannuleerd') ?>
                         </span>
                     </div>

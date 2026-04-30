@@ -45,25 +45,60 @@ class MatchController
             redirect('/matches/new');
         }
 
-        // Participants come as parallel arrays:
-        // participants[user_id][], participants[guest_name][]
+        // Parallel arrays: participants[user_id][], participants[guest_name][]
         $userIds    = (array) ($_POST['participants']['user_id']    ?? []);
         $guestNames = (array) ($_POST['participants']['guest_name'] ?? []);
 
         $participants = [];
+        $seenUsers  = [];
+        $seenGuests = [];
+        $errors = [];
+
         $rows = max(count($userIds), count($guestNames));
         for ($i = 0; $i < $rows; $i++) {
             $u = $userIds[$i]    ?? '';
             $g = trim((string) ($guestNames[$i] ?? ''));
+
+            // Empty row → skip
             if ($u === '' && $g === '') continue;
-            $participants[] = [
-                'user_id'    => $u !== '' ? (int) $u : null,
-                'guest_name' => $g !== '' ? $g : null,
-            ];
+
+            // Can't have both user_id AND guest_name on the same row
+            if ($u !== '' && $g !== '') {
+                $errors['participants'][] = 'Vul per rij óf een speler óf een gastnaam in, niet allebei.';
+                continue;
+            }
+
+            if ($u !== '') {
+                $uid = (int) $u;
+                if (isset($seenUsers[$uid])) {
+                    $errors['participants'][] = 'Een speler kan niet twee keer meedoen.';
+                    continue;
+                }
+                $seenUsers[$uid] = true;
+                $participants[] = ['user_id' => $uid, 'guest_name' => null];
+            } else {
+                $key = mb_strtolower($g);
+                if (isset($seenGuests[$key])) {
+                    $errors['participants'][] = 'Dezelfde gastnaam komt twee keer voor.';
+                    continue;
+                }
+                $seenGuests[$key] = true;
+                $participants[] = ['user_id' => null, 'guest_name' => $g];
+            }
         }
 
         if (count($participants) < 2) {
-            Session::flash('_errors', ['participants' => ['Minimaal 2 deelnemers']]);
+            $errors['participants'][] = 'Minimaal 2 unieke deelnemers.';
+        }
+        // Elo only supports 1v1 cleanly
+        if ($game['score_type'] === 'elo' && count($participants) !== 2) {
+            $errors['participants'][] = 'Elo-spellen ondersteunen alleen 1-tegen-1.';
+        }
+
+        if (!empty($errors)) {
+            // Dedupe error messages
+            $errors['participants'] = array_values(array_unique($errors['participants']));
+            Session::flash('_errors', $errors);
             Session::flash('_old', ['game_id' => $gameId, 'label' => $label]);
             redirect('/matches/new');
         }
@@ -106,15 +141,50 @@ class MatchController
         if ($match['state'] !== 'in_progress') {
             redirect('/matches/' . $match['id']);
         }
+        $game = Game::find((int) $match['game_id']);
+        if (!$game) $this->notFound();
 
-        $rows = (array) ($_POST['p'] ?? []);
-        $inputs = [];
-        foreach ($rows as $partId => $row) {
-            $inputs[] = [
-                'id'        => (int) $partId,
-                'raw_score' => $row['raw_score'] ?? null,
-                'result'    => $row['result']    ?? null,
-            ];
+        $existing = GameMatch::participants((int) $match['id']);
+        $inputs   = [];
+
+        if ($game['score_type'] === 'points_per_match') {
+            $rows = (array) ($_POST['p'] ?? []);
+            foreach ($existing as $p) {
+                $row = $rows[(int) $p['id']] ?? [];
+                $inputs[] = [
+                    'id'        => (int) $p['id'],
+                    'raw_score' => isset($row['raw_score']) ? (int) $row['raw_score'] : 0,
+                    'result'    => null, // engine derives
+                ];
+            }
+        } else {
+            // win_loss + elo: outcome_mode = 'winner' (with winner_id) or 'draw'
+            $mode    = (string) ($_POST['outcome_mode'] ?? '');
+            $winnerId = (int) ($_POST['winner_id'] ?? 0);
+
+            if ($mode === 'draw') {
+                foreach ($existing as $p) {
+                    $inputs[] = ['id' => (int) $p['id'], 'raw_score' => null, 'result' => 'draw'];
+                }
+            } elseif ($mode === 'winner' && $winnerId > 0) {
+                $valid = false;
+                foreach ($existing as $p) {
+                    $isWin = ((int) $p['id'] === $winnerId);
+                    if ($isWin) $valid = true;
+                    $inputs[] = [
+                        'id'        => (int) $p['id'],
+                        'raw_score' => null,
+                        'result'    => $isWin ? 'win' : 'loss',
+                    ];
+                }
+                if (!$valid) {
+                    Session::flash('_flash.error', 'Geldige winnaar is verplicht.');
+                    redirect('/matches/' . $match['id'] . '/record');
+                }
+            } else {
+                Session::flash('_flash.error', 'Kies een winnaar of "gelijkspel".');
+                redirect('/matches/' . $match['id'] . '/record');
+            }
         }
 
         try {

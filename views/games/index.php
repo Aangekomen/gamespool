@@ -4,36 +4,36 @@
 
 <div class="flex items-center justify-between mb-4">
     <div>
-        <h1 class="text-2xl font-bold">Spellen</h1>
-        <p class="text-slate-400 text-sm">Configureer per spel hoe scores worden geteld.</p>
+        <h1 class="text-2xl font-bold text-navy">Spellen</h1>
+        <p class="text-slate-500 text-sm">Configureer per spel hoe scores worden geteld.</p>
     </div>
     <a href="<?= e(url('/games/new')) ?>"
-       class="inline-flex items-center px-4 py-2 rounded-lg bg-emerald-500 text-slate-950 font-semibold hover:bg-emerald-400">
+       class="inline-flex items-center px-4 py-2 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">
         + Nieuw spel
     </a>
 </div>
 
 <?php if (empty($games)): ?>
-    <div class="rounded-xl border border-slate-800 bg-slate-900 p-8 text-center">
-        <p class="text-slate-300">Nog geen spellen toegevoegd.</p>
-        <a href="<?= e(url('/games/new')) ?>" class="inline-block mt-4 px-4 py-2 rounded-lg bg-emerald-500 text-slate-950 font-semibold">Voeg je eerste spel toe</a>
+    <div class="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-card">
+        <p class="text-slate-600">Nog geen spellen toegevoegd.</p>
+        <a href="<?= e(url('/games/new')) ?>" class="inline-block mt-4 px-4 py-2 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Voeg je eerste spel toe</a>
     </div>
 <?php else: ?>
     <ul class="space-y-2">
         <?php foreach ($games as $g): ?>
-            <li class="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 px-4 py-3">
+            <li class="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-card">
                 <div>
-                    <p class="font-semibold"><?= e($g['name']) ?></p>
-                    <p class="text-xs text-slate-400"><?= e(Game::scoreTypeLabel($g['score_type'])) ?></p>
+                    <p class="font-semibold text-navy"><?= e($g['name']) ?></p>
+                    <p class="text-xs text-slate-500"><?= e(Game::scoreTypeLabel($g['score_type'])) ?></p>
                 </div>
                 <div class="flex items-center gap-2">
                     <a href="<?= e(url('/games/' . $g['slug'] . '/edit')) ?>"
-                       class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-sm">Bewerken</a>
+                       class="px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm">Bewerken</a>
                     <form method="post" action="<?= e(url('/games/' . $g['slug'])) ?>"
                           onsubmit="return confirm('Spel <?= e($g['name']) ?> verwijderen?');">
                         <?= csrf_field() ?>
                         <input type="hidden" name="_method" value="DELETE">
-                        <button class="px-3 py-1.5 rounded-md bg-red-900/60 hover:bg-red-800 text-sm">Verwijder</button>
+                        <button class="px-3 py-1.5 rounded-md bg-red-50 hover:bg-red-100 text-red-700 text-sm">Verwijder</button>
                     </form>
                 </div>
             </li>
