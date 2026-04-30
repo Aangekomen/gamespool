@@ -243,6 +243,20 @@ class GameMatch
     }
 
     /**
+     * Any non-finished match (waiting or in_progress) currently bound to a device.
+     */
+    public static function activeForDevice(int $deviceId): ?array
+    {
+        return Database::fetch(
+            'SELECT * FROM matches
+              WHERE device_id = ? AND state IN ("waiting","in_progress")
+              ORDER BY id DESC
+              LIMIT 1',
+            [$deviceId]
+        );
+    }
+
+    /**
      * Add a 2nd participant and lock the match (waiting → in_progress).
      * Returns true if accepted, false if user was already in the match.
      */

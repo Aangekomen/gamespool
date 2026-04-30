@@ -99,6 +99,14 @@ class MatchController
                 $back = '/matches/new' . ($gameId ? '?game_id=' . $gameId : '');
                 redirect($back);
             }
+            // One active match per device
+            $busy = GameMatch::activeForDevice((int) $device['id']);
+            if ($busy) {
+                Session::flash('_errors', ['device_code' => ['Op dit apparaat is al een match bezig.']]);
+                Session::flash('_old', ['game_id' => $gameId, 'label' => $label, 'device_code' => $deviceCode]);
+                $back = '/matches/new' . ($gameId ? '?game_id=' . $gameId : '');
+                redirect($back);
+            }
             $deviceId = (int) $device['id'];
         }
 
@@ -219,9 +227,15 @@ class MatchController
             exit;
         }
 
-        $waiting = GameMatch::waitingForDevice((int) $device['id']);
-        if ($waiting) {
-            redirect('/m/' . $waiting['join_token']);
+        // One active match per device — redirect to existing if any
+        $existing = GameMatch::activeForDevice((int) $device['id']);
+        if ($existing) {
+            if ($existing['state'] === 'waiting') {
+                redirect('/m/' . $existing['join_token']);
+            }
+            // in_progress → can't start a new one
+            Session::flash('_flash.error', 'Op dit apparaat is al een match bezig.');
+            redirect('/matches/' . $existing['id']);
         }
 
         $matchId = GameMatch::createWaiting($device, (int) Auth::id());
