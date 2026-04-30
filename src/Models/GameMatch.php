@@ -5,6 +5,7 @@ namespace GamesPool\Models;
 
 use GamesPool\Core\Database;
 use GamesPool\Core\ScoreEngine;
+use GamesPool\Models\Tournament;
 
 /**
  * "Match" is a reserved word in PHP 8, so we use GameMatch.
@@ -131,6 +132,24 @@ class GameMatch
             if (Database::pdo()->inTransaction()) Database::pdo()->rollBack();
             throw $e;
         }
+
+        // Hook: toernooimatch? Advance winner naar volgende ronde.
+        if (!empty($match['tournament_id'])) {
+            $winner = null;
+            foreach ($computed as $row) {
+                if (($row['result'] ?? null) === 'win' && !empty($row['user_id'])) {
+                    $winner = (int) $row['user_id']; break;
+                }
+            }
+            if ($winner !== null) {
+                Tournament::advanceWinner(
+                    (int) $match['tournament_id'],
+                    (int) $match['bracket_round'],
+                    (int) $match['bracket_slot'],
+                    $winner
+                );
+            }
+        }
     }
 
     private static function mergeInputs(int $matchId, array $participantInputs): array
@@ -174,6 +193,19 @@ class GameMatch
               WHERE id = ?',
             [$byUserId, json_encode($participantInputs, JSON_THROW_ON_ERROR), $matchId]
         );
+
+        // Push: vraag de tegenstanders om te bevestigen
+        $by = Database::fetch('SELECT display_name FROM users WHERE id = ?', [$byUserId]);
+        $byName = (string) ($by['display_name'] ?? 'Iemand');
+        foreach ($userIds as $uid) {
+            if ((int) $uid === $byUserId) continue;
+            \GamesPool\Core\Push::sendToUser(
+                (int) $uid,
+                'Bevestig de uitslag',
+                $byName . ' heeft de uitslag ingevoerd — klopt het?',
+                '/matches/' . $matchId
+            );
+        }
     }
 
     /**

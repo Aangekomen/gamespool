@@ -11,8 +11,10 @@ use GamesPool\Controllers\HomeController;
 use GamesPool\Controllers\LeaderboardController;
 use GamesPool\Controllers\MatchController;
 use GamesPool\Controllers\ProfileController;
+use GamesPool\Controllers\PushController;
 use GamesPool\Controllers\QrController;
 use GamesPool\Controllers\TeamController;
+use GamesPool\Controllers\TournamentController;
 use GamesPool\Controllers\TvController;
 
 class App
@@ -84,6 +86,15 @@ class App
         // Leaderboard
         $r->get('/leaderboard', [LeaderboardController::class, 'index']);
 
+        // Tournaments
+        $r->get('/tournaments',                 [TournamentController::class, 'index']);
+        $r->get('/tournaments/new',             [TournamentController::class, 'showCreate']);
+        $r->post('/tournaments',                [TournamentController::class, 'create']);
+        $r->get('/tournaments/{id}',            [TournamentController::class, 'show']);
+        $r->post('/tournaments/{id}/register',  [TournamentController::class, 'register']);
+        $r->post('/tournaments/{id}/leave',     [TournamentController::class, 'unregister']);
+        $r->post('/tournaments/{id}/start',     [TournamentController::class, 'start']);
+
         // Teams
         $r->get('/teams',                                       [TeamController::class, 'index']);
         $r->get('/teams/join',                                  [TeamController::class, 'showJoin']);
@@ -114,6 +125,12 @@ class App
         $r->post('/m/{token}/accept',     [MatchController::class, 'acceptLobby']);
         $r->get('/qr.svg',                [QrController::class,    'svg']);
         $r->get('/scan',                  [MatchController::class, 'scanPage']);
+
+        // Web Push
+        $r->get('/push/key',              [PushController::class, 'publicKey']);
+        $r->post('/push/subscribe',       [PushController::class, 'subscribe']);
+        $r->post('/push/unsubscribe',     [PushController::class, 'unsubscribe']);
+        $r->post('/push/test',            [PushController::class, 'sendTest']);
 
         // Public TV / kiosk view
         $r->get('/tv',                    [TvController::class,    'index']);

@@ -151,6 +151,35 @@ $initial   = strtoupper(mb_substr((string) ($user['display_name'] ?? '?'), 0, 1)
     </form>
 </section>
 
+<!-- Notificaties (web-push) -->
+<section id="notificaties" class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-3 scroll-mt-32">
+    <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-brand-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .53-.21 1.04-.59 1.41L4 17h5m6 0a3 3 0 1 1-6 0"/></svg>
+        Notificaties
+    </h2>
+    <p class="text-sm text-slate-600 dark:text-slate-300 mb-3">
+        Krijg een melding wanneer iemand je uitslag ter bevestiging stuurt, of als er een rematch klaarstaat.
+        Je kan dit altijd uitzetten via je browser.
+    </p>
+    <div id="pushUnsupported" class="hidden text-xs text-slate-500 dark:text-slate-400 mb-2"></div>
+    <div class="grid grid-cols-2 gap-2">
+        <button id="pushSubBtn" type="button"
+                class="hidden col-span-2 rounded-lg bg-brand text-white font-semibold py-2.5 hover:bg-brand-dark">
+            Notificaties aanzetten
+        </button>
+        <button id="pushUnsubBtn" type="button"
+                class="hidden rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-red-50 hover:text-red-700 text-slate-600 dark:text-slate-300 font-semibold py-2.5">
+            Uitzetten
+        </button>
+        <form method="post" action="<?= e(url('/push/test')) ?>" id="pushTestForm" class="hidden">
+            <?= csrf_field() ?>
+            <button class="w-full rounded-lg bg-slate-100 dark:bg-slate-800 text-navy dark:text-slate-100 font-semibold py-2.5 hover:bg-slate-200 dark:hover:bg-slate-700">
+                Stuur test
+            </button>
+        </form>
+    </div>
+</section>
+
 <!-- Thema-keuze -->
 <section id="thema" class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-3 scroll-mt-32">
     <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-3 flex items-center gap-2">
@@ -233,6 +262,81 @@ $initial   = strtoupper(mb_substr((string) ($user['display_name'] ?? '?'), 0, 1)
                 (s <= 1 ? 'bg-red-500' : s <= 2 ? 'bg-amber-500' : s <= 3 ? 'bg-amber-400' : 'bg-brand');
         });
     }
+
+    // Web Push aan/uit-flow
+    (async function () {
+        const subBtn   = document.getElementById('pushSubBtn');
+        const unsubBtn = document.getElementById('pushUnsubBtn');
+        const testForm = document.getElementById('pushTestForm');
+        const note     = document.getElementById('pushUnsupported');
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            note.textContent = 'Push-notificaties worden niet ondersteund door deze browser.';
+            note.classList.remove('hidden');
+            return;
+        }
+        const reg = await navigator.serviceWorker.ready;
+        let existing = await reg.pushManager.getSubscription();
+
+        function reflect() {
+            subBtn.classList.toggle('hidden',  !!existing);
+            unsubBtn.classList.toggle('hidden', !existing);
+            testForm.classList.toggle('hidden', !existing);
+        }
+        reflect();
+
+        function urlB64ToUint8Array(b64) {
+            const padding = '='.repeat((4 - b64.length % 4) % 4);
+            const base64 = (b64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const raw = atob(base64);
+            const arr = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+            return arr;
+        }
+
+        subBtn.addEventListener('click', async () => {
+            try {
+                const keyRes = await fetch('/push/key');
+                const { key } = await keyRes.json();
+                if (!key) {
+                    note.textContent = 'Push is nog niet geconfigureerd op de server (VAPID-keys ontbreken).';
+                    note.classList.remove('hidden');
+                    return;
+                }
+                const perm = await Notification.requestPermission();
+                if (perm !== 'granted') return;
+                const sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlB64ToUint8Array(key),
+                });
+                const csrf = document.querySelector('input[name=_csrf]').value;
+                await fetch('/push/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                    body: JSON.stringify(sub.toJSON()),
+                });
+                existing = sub; reflect();
+                if (window.fc) fc.success();
+            } catch (e) {
+                note.textContent = 'Subscribe mislukt: ' + e.message;
+                note.classList.remove('hidden');
+            }
+        });
+
+        unsubBtn.addEventListener('click', async () => {
+            if (!existing) return;
+            const endpoint = existing.endpoint;
+            try {
+                await existing.unsubscribe();
+                const csrf = document.querySelector('input[name=_csrf]').value;
+                await fetch('/push/unsubscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+                    body: JSON.stringify({ endpoint }),
+                });
+                existing = null; reflect();
+            } catch (e) {}
+        });
+    })();
 
     // Thema-keuze
     const opts = document.querySelectorAll('.theme-opt');

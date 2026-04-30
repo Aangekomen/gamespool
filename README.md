@@ -40,6 +40,27 @@ php -S localhost:8000 -t public
 
 Bezoek `http://localhost:8000`.
 
+## Web-push notificaties (optioneel)
+
+Voor push-meldingen ("bevestig de uitslag", inactiviteits-pings):
+
+1. Installeer de library: `composer require minishlink/web-push`
+2. Genereer VAPID-keys: `vendor/bin/generate-vapid-keys`
+3. Voeg toe aan `config/config.php`:
+   ```php
+   'push' => [
+       'vapid_public'  => 'BPgxxx...',
+       'vapid_private' => 'xxx...',
+       'subject'       => 'mailto:admin@jouwdomein.nl',
+   ],
+   ```
+4. Cron voor inactiviteits-pings (Plesk → Scheduled Tasks, dagelijks):
+   ```
+   /usr/bin/php /var/www/vhosts/jouwdomein.nl/httpdocs/notify-inactive.php
+   ```
+
+Zonder deze config blijft alles werken; alleen de feitelijke push-verzending wordt overgeslagen.
+
 ## Structuur
 
 ```

@@ -19,6 +19,34 @@ self.addEventListener('activate', (event) => {
     })());
 });
 
+// Web Push: toon notificatie zoals payload aangeeft
+self.addEventListener('push', (event) => {
+    let data = { title: 'FlexiComp', body: 'Er is iets gebeurd', url: '/' };
+    if (event.data) {
+        try { data = Object.assign(data, event.data.json()); } catch (e) {}
+    }
+    event.waitUntil(self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: '/icon-192.svg',
+        badge: '/icon-192.svg',
+        data: { url: data.url || '/' },
+        tag:  data.tag || 'flexicomp',
+    }));
+});
+
+// Klik op notificatie: open de meegestuurde URL (of focus bestaande tab)
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const target = (event.notification.data && event.notification.data.url) || '/';
+    event.waitUntil((async () => {
+        const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const c of all) {
+            if (c.url.includes(target)) return c.focus();
+        }
+        return self.clients.openWindow(target);
+    })());
+});
+
 self.addEventListener('fetch', (event) => {
     const req = event.request;
     if (req.method !== 'GET') return;
