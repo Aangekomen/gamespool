@@ -10,6 +10,7 @@ use GamesPool\Controllers\GameController;
 use GamesPool\Controllers\HomeController;
 use GamesPool\Controllers\LeaderboardController;
 use GamesPool\Controllers\MatchController;
+use GamesPool\Controllers\PouleController;
 use GamesPool\Controllers\ProfileController;
 use GamesPool\Controllers\PushController;
 use GamesPool\Controllers\QrController;
@@ -51,6 +52,7 @@ class App
         $r = $this->router;
 
         $r->get('/',          [HomeController::class, 'index']);
+        $r->post('/active-game', [HomeController::class, 'setActiveGame']);
 
         $r->get('/register',  [AuthController::class, 'showRegister']);
         $r->post('/register', [AuthController::class, 'register']);
@@ -96,6 +98,16 @@ class App
         $r->post('/tournaments/{id}/start',     [TournamentController::class, 'start']);
         $r->delete('/tournaments/{id}',         [TournamentController::class, 'destroy']);
 
+        // Poules (round-robin)
+        $r->get('/poules',                     [PouleController::class, 'index']);
+        $r->get('/poules/new',                 [PouleController::class, 'showCreate']);
+        $r->post('/poules',                    [PouleController::class, 'create']);
+        $r->get('/poules/{id}',                [PouleController::class, 'show']);
+        $r->post('/poules/{id}/register',      [PouleController::class, 'register']);
+        $r->post('/poules/{id}/leave',         [PouleController::class, 'unregister']);
+        $r->post('/poules/{id}/start',         [PouleController::class, 'start']);
+        $r->delete('/poules/{id}',             [PouleController::class, 'destroy']);
+
         // Teams
         $r->get('/teams',                                       [TeamController::class, 'index']);
         $r->get('/teams/join',                                  [TeamController::class, 'showJoin']);
@@ -139,6 +151,7 @@ class App
 
         // Public TV / kiosk view
         $r->get('/tv',                    [TvController::class,    'index']);
+        $r->get('/tv/{slug}',             [TvController::class,    'gameTv']);
 
         // Admin
         $r->get('/admin',                                 [AdminController::class, 'index']);

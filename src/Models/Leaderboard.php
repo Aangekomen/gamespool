@@ -73,11 +73,11 @@ class Leaderboard
      * Player standings: sum of points_awarded over completed matches in window.
      * If $gameId is given and that game uses Elo, returns current ratings.
      */
-    public static function players(string $period, ?int $gameId = null, int $limit = 100): array
+    public static function players(string $period, ?int $gameId = null, int $limit = 100, string $scoring = 'auto'): array
     {
         $since = self::since($period);
 
-        if ($gameId !== null) {
+        if ($gameId !== null && $scoring !== 'wins') {
             $game = Game::find($gameId);
             if ($game && $game['score_type'] === 'elo' && $period === 'lifetime') {
                 return Database::fetchAll(
@@ -106,9 +106,16 @@ class Leaderboard
             $params[] = $gameId;
         }
 
+        // Globale view of expliciet 'wins' modus: ranking op aantal winsten,
+        // 1 punt per winst — gelijk speelveld over alle scoring-systemen.
+        $useWins = ($scoring === 'wins') || ($gameId === null && $scoring === 'auto');
+        $pointsExpr = $useWins
+            ? "SUM(p.result = 'win')"
+            : "COALESCE(SUM(p.points_awarded), 0)";
+
         return Database::fetchAll(
             "SELECT u.id, u.display_name, u.avatar_path,
-                    COALESCE(SUM(p.points_awarded), 0) AS total_points,
+                    {$pointsExpr} AS total_points,
                     COUNT(p.id) AS matches_played,
                     SUM(p.result = 'win') AS wins
                FROM match_participants p

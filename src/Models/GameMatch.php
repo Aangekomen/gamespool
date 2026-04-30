@@ -25,8 +25,14 @@ class GameMatch
     /**
      * List recent matches with game name. Optional filter by user (matches the user participated in).
      */
-    public static function recent(int $limit = 25, ?int $userId = null): array
+    public static function recent(int $limit = 25, ?int $userId = null, ?int $gameId = null): array
     {
+        $extraWhere = '';
+        $extraArgs = [];
+        if ($gameId !== null) {
+            $extraWhere = ' AND m.game_id = ?';
+            $extraArgs[] = $gameId;
+        }
         if ($userId !== null) {
             return Database::fetchAll(
                 'SELECT m.*, g.name AS game_name, g.slug AS game_slug,
@@ -34,18 +40,20 @@ class GameMatch
                         (SELECT mp.points_awarded FROM match_participants mp WHERE mp.match_id = m.id AND mp.user_id = ? LIMIT 1) AS my_points
                    FROM matches m
                    JOIN games g ON g.id = m.game_id
-                  WHERE EXISTS (SELECT 1 FROM match_participants p WHERE p.match_id = m.id AND p.user_id = ?)
+                  WHERE EXISTS (SELECT 1 FROM match_participants p WHERE p.match_id = m.id AND p.user_id = ?)' . $extraWhere . '
                   ORDER BY m.started_at DESC
                   LIMIT ' . (int) $limit,
-                [$userId, $userId, $userId]
+                array_merge([$userId, $userId, $userId], $extraArgs)
             );
         }
         return Database::fetchAll(
             'SELECT m.*, g.name AS game_name, g.slug AS game_slug
                FROM matches m
                JOIN games g ON g.id = m.game_id
+              WHERE 1=1' . $extraWhere . '
               ORDER BY m.started_at DESC
-              LIMIT ' . (int) $limit
+              LIMIT ' . (int) $limit,
+            $extraArgs
         );
     }
 
@@ -293,15 +301,19 @@ class GameMatch
     /**
      * Currently-active matches (waiting + in_progress) with participant names joined.
      */
-    public static function active(int $limit = 10): array
+    public static function active(int $limit = 10, ?int $gameId = null): array
     {
+        $extra = '';
+        $args  = [];
+        if ($gameId !== null) { $extra = ' AND m.game_id = ?'; $args[] = $gameId; }
         $rows = Database::fetchAll(
             "SELECT m.*, g.name AS game_name, g.slug AS game_slug
                FROM matches m
                JOIN games g ON g.id = m.game_id
-              WHERE m.state IN ('waiting','in_progress')
+              WHERE m.state IN ('waiting','in_progress','pending_confirmation')" . $extra . "
               ORDER BY m.started_at DESC
-              LIMIT " . (int) $limit
+              LIMIT " . (int) $limit,
+            $args
         );
         if (!$rows) return [];
 

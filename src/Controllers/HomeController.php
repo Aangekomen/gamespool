@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace GamesPool\Controllers;
 
+use GamesPool\Core\ActiveGame;
 use GamesPool\Core\Auth;
 use GamesPool\Core\Database;
+use GamesPool\Core\Session;
 use GamesPool\Models\Game;
 use GamesPool\Models\GameMatch;
 use GamesPool\Models\Leaderboard;
@@ -13,6 +15,16 @@ use GamesPool\Models\Tournament;
 
 class HomeController
 {
+    /** POST /active-game — zet of unset het actieve spel-filter. */
+    public function setActiveGame(): void
+    {
+        $slug = trim((string) ($_POST['game'] ?? ''));
+        ActiveGame::set($slug !== '' ? $slug : null);
+        $back = $_SERVER['HTTP_REFERER'] ?? '/';
+        if (!str_starts_with($back, (string) \GamesPool\Core\Config::get('app.url', ''))) $back = '/';
+        redirect($back);
+    }
+
     public function index(): string
     {
         if (!Auth::check()) {
@@ -21,14 +33,16 @@ class HomeController
 
         $userId = (int) Auth::id();
         $myTeams = Team::forUser($userId);
+        $activeGameId = ActiveGame::id();
         return view('home', [
             'guest'         => false,
             'stats'         => $this->personalStats($userId),
             'games'         => Game::all(),
-            'activeMatches' => GameMatch::active(8),
-            'recentMatches' => GameMatch::recent(5, $userId),
+            'activeMatches' => GameMatch::active(8, $activeGameId),
+            'recentMatches' => GameMatch::recent(5, $userId, $activeGameId),
             'hasTeam'       => count($myTeams) > 0,
             'tournaments'   => Tournament::upcoming(3),
+            'activeGame'    => ActiveGame::game(),
         ]);
     }
 

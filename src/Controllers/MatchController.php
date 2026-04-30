@@ -16,7 +16,7 @@ class MatchController
     {
         Auth::requireLogin();
         return view('matches/index', [
-            'matches' => GameMatch::recent(50, (int) Auth::id()),
+            'matches' => GameMatch::recent(50, (int) Auth::id(), \GamesPool\Core\ActiveGame::id()),
         ]);
     }
 

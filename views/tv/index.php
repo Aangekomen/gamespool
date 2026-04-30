@@ -6,6 +6,11 @@
 /** @var array $devices */
 /** @var string $seasonLabel */
 /** @var int $seasonDays */
+/** @var ?array $currentGame */
+/** @var array $allGames */
+/** @var string $scoringMode */
+$tvTitle = $currentGame ? htmlspecialchars($currentGame['name']) : 'Alle sporten';
+$tvSubtitle = $currentGame ? 'TV — ' . htmlspecialchars($currentGame['name']) : 'TV — globaal · 1 pt per winst';
 ?>
 <!doctype html>
 <html lang="nl" class="h-full bg-slate-950 text-slate-100">
@@ -14,7 +19,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0f172a">
     <meta http-equiv="refresh" content="10">
-    <title>FlexiComp · TV</title>
+    <title>FlexiComp · <?= $tvTitle ?> · TV</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
@@ -40,12 +45,15 @@
 
 <!-- Header — altijd zichtbaar -->
 <header class="px-8 py-5 flex items-center justify-between border-b border-slate-800/70 shrink-0">
-    <div class="flex items-center gap-3">
-        <span class="inline-block w-9 h-9 rounded-md bg-navy relative">
+    <div class="flex items-center gap-3 min-w-0">
+        <span class="inline-block w-9 h-9 rounded-md bg-navy relative shrink-0">
             <span class="absolute inset-1.5 rounded-sm bg-brand"></span>
         </span>
-        <span class="text-2xl font-extrabold tracking-tight text-white">FlexiComp</span>
-        <span class="hidden md:inline-block text-xs uppercase tracking-widest text-slate-500 ml-2">
+        <div class="min-w-0">
+            <p class="text-2xl font-extrabold tracking-tight text-white truncate"><?= $tvTitle ?></p>
+            <p class="text-[10px] uppercase tracking-widest text-slate-500 truncate"><?= $tvSubtitle ?></p>
+        </div>
+        <span class="hidden md:inline-block text-xs uppercase tracking-widest text-slate-500 ml-3 shrink-0">
             Seizoen <?= htmlspecialchars($seasonLabel) ?> · nog <?= (int) $seasonDays ?> dagen
         </span>
     </div>
@@ -58,6 +66,19 @@
         </div>
     </div>
 </header>
+
+<nav class="px-8 py-2 border-b border-slate-800/70 flex items-center gap-2 overflow-x-auto whitespace-nowrap shrink-0">
+    <a href="<?= htmlspecialchars(url('/tv')) ?>"
+       class="text-xs uppercase tracking-widest font-bold px-3 py-1.5 rounded-full border <?= $currentGame === null ? 'bg-brand text-navy border-brand' : 'border-slate-800 text-slate-400 hover:text-white hover:border-slate-600' ?>">
+        Globaal
+    </a>
+    <?php foreach ($allGames as $g): $sel = $currentGame && (int) $currentGame['id'] === (int) $g['id']; ?>
+        <a href="<?= htmlspecialchars(url('/tv/' . $g['slug'])) ?>"
+           class="text-xs uppercase tracking-widest font-bold px-3 py-1.5 rounded-full border <?= $sel ? 'bg-brand text-navy border-brand' : 'border-slate-800 text-slate-400 hover:text-white hover:border-slate-600' ?>">
+            <?= htmlspecialchars($g['name']) ?>
+        </a>
+    <?php endforeach; ?>
+</nav>
 
 <main class="flex-1 px-8 py-6 overflow-hidden">
 

@@ -113,6 +113,34 @@ $icon = function (string $name): string {
         </div>
     </header>
 
+    <?php if (user()):
+        $allGames = \GamesPool\Models\Game::all();
+        $activeSlug = \GamesPool\Core\ActiveGame::slug();
+    ?>
+        <div class="sticky top-14 z-20 bg-surface dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+            <div class="max-w-3xl mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
+                <span class="text-[11px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 shrink-0">Spel:</span>
+                <form method="post" action="<?= e(url('/active-game')) ?>" class="contents">
+                    <?= csrf_field() ?>
+                    <button name="game" value="" type="submit"
+                            class="text-xs px-3 py-1.5 rounded-full border <?= $activeSlug === null
+                                ? 'bg-navy text-white border-navy'
+                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand' ?>">
+                        Alles
+                    </button>
+                    <?php foreach ($allGames as $g): $sel = $activeSlug === $g['slug']; ?>
+                        <button name="game" value="<?= e($g['slug']) ?>" type="submit"
+                                class="text-xs px-3 py-1.5 rounded-full border <?= $sel
+                                    ? 'bg-navy text-white border-navy'
+                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand' ?>">
+                            <?= e($g['name']) ?>
+                        </button>
+                    <?php endforeach; ?>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <main class="flex-1 pb-24">
         <div class="max-w-3xl mx-auto px-4 py-6 sm:py-8">
             <?php if (user() && empty(user()['email_verified_at'])): ?>

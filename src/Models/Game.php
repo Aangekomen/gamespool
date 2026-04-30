@@ -19,7 +19,10 @@ class Game
             'win_loss'         => ['win_points' => 1, 'loss_points' => 0, 'draw_points' => 0],
             'points_per_match' => [],
             'elo'              => ['start_rating' => 1000, 'k_factor' => 24],
-            'team_score'       => ['win_points' => 1, 'loss_points' => 0, 'draw_points' => 0],
+            'team_score'       => [
+                'win_points' => 1, 'loss_points' => 0, 'draw_points' => 0,
+                'team_a_name' => 'A', 'team_b_name' => 'B',
+            ],
             default            => [],
         };
     }
