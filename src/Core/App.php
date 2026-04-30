@@ -76,6 +76,8 @@ class App
         $r->get('/matches/{id}',                  [MatchController::class, 'show']);
         $r->get('/matches/{id}/record',           [MatchController::class, 'recordForm']);
         $r->post('/matches/{id}/record',          [MatchController::class, 'record']);
+        $r->post('/matches/{id}/confirm',         [MatchController::class, 'confirm']);
+        $r->post('/matches/{id}/dispute',         [MatchController::class, 'dispute']);
         $r->post('/matches/{id}/rematch',         [MatchController::class, 'rematch']);
         $r->post('/matches/{id}/cancel',          [MatchController::class, 'cancel']);
 
@@ -108,6 +110,7 @@ class App
         $r->get('/d/{code}',              [MatchController::class, 'scanDevice']);
         $r->get('/m/{token}',             [MatchController::class, 'lobby']);
         $r->get('/m/{token}/state.json',  [MatchController::class, 'lobbyState']);
+        $r->get('/m/{token}/events',      [MatchController::class, 'matchStream']);
         $r->post('/m/{token}/accept',     [MatchController::class, 'acceptLobby']);
         $r->get('/qr.svg',                [QrController::class,    'svg']);
         $r->get('/scan',                  [MatchController::class, 'scanPage']);

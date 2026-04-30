@@ -34,6 +34,8 @@
                 $badge = ['Wacht', 'bg-amber-100 text-amber-800'];
             } elseif ($m['state'] === 'in_progress') {
                 $badge = ['Bezig', 'bg-amber-100 text-amber-800'];
+            } elseif ($m['state'] === 'pending_confirmation') {
+                $badge = ['Bevestig?', 'bg-amber-100 text-amber-800'];
             } elseif ($m['state'] === 'cancelled') {
                 $badge = ['Geannuleerd', 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'];
             } elseif ($m['state'] === 'completed') {

@@ -135,11 +135,63 @@ class MatchController
             }
         }
 
+        // Vertaal pending_payload naar mens-leesbare voorbeeld-uitslag
+        $pendingPreview = null;
+        if ($match['state'] === 'pending_confirmation' && !empty($match['pending_payload'])) {
+            try {
+                $pp = json_decode((string) $match['pending_payload'], true, 32, JSON_THROW_ON_ERROR);
+                $byPid = [];
+                foreach ($participants as $p) $byPid[(int) $p['id']] = $p;
+                $lines = [];
+                if ($game['score_type'] === 'team_score') {
+                    $sideName = ['A' => [], 'B' => []];
+                    $sideScore = ['A' => null, 'B' => null];
+                    foreach ($pp as $row) {
+                        $pid  = (int) ($row['id'] ?? 0);
+                        $side = $row['match_side'] ?? null;
+                        if ($side === 'A' || $side === 'B') {
+                            $sideName[$side][] = $byPid[$pid]['display_name'] ?? '?';
+                            if (isset($row['raw_score'])) $sideScore[$side] = (int) $row['raw_score'];
+                        }
+                    }
+                    $lines[] = 'Team A (' . implode(', ', $sideName['A']) . ') ' . ($sideScore['A'] ?? '–') .
+                               ' — Team B (' . implode(', ', $sideName['B']) . ') ' . ($sideScore['B'] ?? '–');
+                } elseif ($game['score_type'] === 'points_per_match') {
+                    foreach ($pp as $row) {
+                        $pid = (int) ($row['id'] ?? 0);
+                        $name = $byPid[$pid]['display_name'] ?? '?';
+                        $lines[] = $name . ': ' . (int) ($row['raw_score'] ?? 0);
+                    }
+                } else {
+                    foreach ($pp as $row) {
+                        $pid = (int) ($row['id'] ?? 0);
+                        $name = $byPid[$pid]['display_name'] ?? '?';
+                        $r = $row['result'] ?? null;
+                        if ($r === 'win')  $lines[] = '🏆 ' . $name . ' wint';
+                        elseif ($r === 'draw') $lines[] = '⚖️ ' . $name . ' (gelijk)';
+                    }
+                }
+                $byUser = Database::fetch('SELECT display_name FROM users WHERE id = ?', [(int) $match['pending_recorded_by']]);
+                $pendingPreview = [
+                    'lines'      => $lines,
+                    'by_name'    => $byUser['display_name'] ?? 'iemand',
+                    'by_user_id' => (int) $match['pending_recorded_by'],
+                ];
+            } catch (\JsonException) {}
+        }
+
+        // Best-of-N serie-context
+        $series = !empty($match['series_id'])
+            ? GameMatch::seriesSummary((string) $match['series_id'])
+            : null;
+
         return view('matches/show', [
-            'match'        => $match,
-            'game'         => $game,
-            'participants' => $participants,
-            'h2h'          => $h2h,
+            'match'          => $match,
+            'game'           => $game,
+            'participants'   => $participants,
+            'h2h'            => $h2h,
+            'pendingPreview' => $pendingPreview,
+            'series'         => $series,
         ]);
     }
 
@@ -148,6 +200,7 @@ class MatchController
         Auth::requireLogin();
         $match = GameMatch::find((int) $id) ?? $this->notFound();
         if ($match['state'] !== 'in_progress') {
+            // Pending of completed: terug naar show voor confirm/dispute of view
             redirect('/matches/' . $match['id']);
         }
         $game = Game::find((int) $match['game_id']);
@@ -239,12 +292,65 @@ class MatchController
         }
 
         try {
-            GameMatch::recordResults((int) $match['id'], $inputs);
-            Session::flash('_flash.success', 'Uitslag opgeslagen.');
+            GameMatch::recordPending((int) $match['id'], (int) Auth::id(), $inputs);
+            Session::flash('_flash.success', 'Uitslag genoteerd — wacht op bevestiging van een tegenstander.');
         } catch (\Throwable $e) {
             Session::flash('_flash.error', 'Opslaan mislukt: ' . $e->getMessage());
         }
         redirect('/matches/' . $match['id']);
+    }
+
+    /**
+     * POST /matches/{id}/confirm — andere deelnemer bevestigt de uitslag.
+     */
+    public function confirm(string $id): void
+    {
+        Auth::requireLogin();
+        $match = GameMatch::find((int) $id) ?? $this->notFound();
+        if ($match['state'] !== 'pending_confirmation') {
+            redirect('/matches/' . $match['id']);
+        }
+        $userId = (int) Auth::id();
+        if ((int) ($match['pending_recorded_by'] ?? 0) === $userId) {
+            Session::flash('_flash.error', 'Iemand anders moet jouw uitslag bevestigen.');
+            redirect('/matches/' . $match['id']);
+        }
+        // Alleen deelnemers mogen bevestigen
+        $isParticipant = false;
+        foreach (GameMatch::participants((int) $match['id']) as $p) {
+            if ((int) ($p['user_id'] ?? 0) === $userId) { $isParticipant = true; break; }
+        }
+        if (!$isParticipant) {
+            Session::flash('_flash.error', 'Alleen deelnemers kunnen bevestigen.');
+            redirect('/matches/' . $match['id']);
+        }
+        GameMatch::confirmPending((int) $match['id']);
+        Session::flash('_flash.success', 'Uitslag bevestigd!');
+        redirect('/matches/' . $match['id']);
+    }
+
+    /**
+     * POST /matches/{id}/dispute — uitslag betwisten, terug naar in_progress.
+     */
+    public function dispute(string $id): void
+    {
+        Auth::requireLogin();
+        $match = GameMatch::find((int) $id) ?? $this->notFound();
+        if ($match['state'] !== 'pending_confirmation') {
+            redirect('/matches/' . $match['id']);
+        }
+        $userId = (int) Auth::id();
+        $isParticipant = false;
+        foreach (GameMatch::participants((int) $match['id']) as $p) {
+            if ((int) ($p['user_id'] ?? 0) === $userId) { $isParticipant = true; break; }
+        }
+        if (!$isParticipant) {
+            Session::flash('_flash.error', 'Alleen deelnemers kunnen betwisten.');
+            redirect('/matches/' . $match['id']);
+        }
+        GameMatch::disputePending((int) $match['id']);
+        Session::flash('_flash.success', 'Uitslag betwist — voer de juiste uitslag opnieuw in.');
+        redirect('/matches/' . $match['id'] . '/record');
     }
 
     /**
@@ -263,6 +369,57 @@ class MatchController
             'participant_count' => count($parts),
             'match_id'          => (int) $match['id'],
         ]);
+    }
+
+    /**
+     * Server-Sent Events stream voor live lobby/match updates. Stuurt elke
+     * 2s een snapshot zolang er iets verandert; valt na 2 minuten netjes uit
+     * zodat de browser opnieuw connecteert (voorkomt dat shared hosting
+     * de connectie keelhalt).
+     */
+    public function matchStream(string $token): void
+    {
+        Auth::requireLogin();
+        $match = GameMatch::findByToken($token);
+        if (!$match) { http_response_code(404); return; }
+
+        // Output buffering uit — events moeten direct naar de client
+        while (ob_get_level() > 0) ob_end_clean();
+        ignore_user_abort(false);
+
+        header('Content-Type: text/event-stream');
+        header('Cache-Control: no-cache, no-transform');
+        header('X-Accel-Buffering: no');
+        header('Connection: keep-alive');
+
+        $matchId = (int) $match['id'];
+        $endsAt = time() + 120;
+        $lastFingerprint = '';
+
+        while (time() < $endsAt) {
+            $current = GameMatch::find($matchId);
+            if (!$current) break;
+            $parts = GameMatch::participants($matchId);
+            $snapshot = [
+                'state'             => $current['state'],
+                'participant_count' => count($parts),
+                'pending_by'        => $current['pending_recorded_by'] ?? null,
+            ];
+            $fp = md5(json_encode($snapshot));
+            if ($fp !== $lastFingerprint) {
+                echo "event: snapshot\n";
+                echo 'data: ' . json_encode($snapshot) . "\n\n";
+                $lastFingerprint = $fp;
+            } else {
+                echo ": keep-alive\n\n";
+            }
+            @flush();
+            if (connection_aborted()) break;
+
+            // Stop streaming als de match afgelopen is — client navigeert wel.
+            if (in_array($current['state'], ['completed','cancelled'], true)) break;
+            sleep(2);
+        }
     }
 
     /**
@@ -309,6 +466,21 @@ class MatchController
             Session::flash('_flash.error', 'Niet genoeg deelnemers voor een rematch.');
             redirect('/matches/' . $match['id']);
         }
+
+        // Optioneel: rematch start of vervolgt een Best-of-N serie.
+        $seriesId     = $match['series_id'] ?? null;
+        $seriesTarget = !empty($match['series_target']) ? (int) $match['series_target'] : null;
+        $bestOf = (int) ($_POST['best_of'] ?? 0);
+        if (!$seriesId && in_array($bestOf, [3, 5, 7], true)) {
+            $seriesId     = bin2hex(random_bytes(8));
+            $seriesTarget = $bestOf;
+            // Markeer ook de huidige (originele) match als deel van de serie
+            \GamesPool\Core\Database::query(
+                'UPDATE matches SET series_id = ?, series_target = ? WHERE id = ?',
+                [$seriesId, $seriesTarget, (int) $match['id']]
+            );
+        }
+
         $newId = GameMatch::create(
             (int) $match['game_id'],
             (int) Auth::id(),
@@ -316,7 +488,13 @@ class MatchController
             $match['label'] ?? null,
             !empty($match['device_id']) ? (int) $match['device_id'] : null
         );
-        Session::flash('_flash.success', 'Rematch gestart!');
+        if ($seriesId) {
+            \GamesPool\Core\Database::query(
+                'UPDATE matches SET series_id = ?, series_target = ? WHERE id = ?',
+                [$seriesId, $seriesTarget, $newId]
+            );
+        }
+        Session::flash('_flash.success', $seriesId ? 'Volgende match in de serie!' : 'Rematch gestart!');
         redirect('/matches/' . $newId . '/record');
     }
 

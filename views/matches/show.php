@@ -3,6 +3,9 @@
 /** @var array $match */
 /** @var ?array $game */
 /** @var array $participants */
+/** @var ?array $h2h */
+/** @var ?array $pendingPreview */
+/** @var ?array $series */
 use GamesPool\Models\Game;
 $title = 'Match';
 $type  = $game['score_type'] ?? 'win_loss';
@@ -18,11 +21,57 @@ $type  = $game['score_type'] ?? 'win_loss';
                 <?php if ($match['label']): ?> · <?= e($match['label']) ?><?php endif; ?>
             </p>
         </div>
-        <span class="text-xs px-2 py-1 rounded-full font-medium
-            <?= $match['state'] === 'in_progress' ? 'bg-amber-100 text-amber-800' : ($match['state'] === 'completed' ? 'bg-brand-light text-brand-dark' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300') ?>">
-            <?= $match['state'] === 'in_progress' ? 'Bezig' : ($match['state'] === 'completed' ? 'Afgerond' : 'Geannuleerd') ?>
+        <?php
+            $stateBadge = match ($match['state']) {
+                'in_progress'           => ['Bezig',          'bg-amber-100 text-amber-800'],
+                'pending_confirmation'  => ['Wacht op bevestiging', 'bg-amber-100 text-amber-800'],
+                'completed'             => ['Afgerond',       'bg-brand-light text-brand-dark'],
+                'waiting'               => ['Wacht',          'bg-amber-100 text-amber-800'],
+                default                 => ['Geannuleerd',    'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'],
+            };
+        ?>
+        <span class="text-xs px-2 py-1 rounded-full font-medium <?= $stateBadge[1] ?>">
+            <?= e($stateBadge[0]) ?>
         </span>
     </div>
+
+    <?php if ($match['state'] === 'pending_confirmation' && !empty($pendingPreview)):
+        $myId = (int) (user()['id'] ?? 0);
+        $isRecorder = $myId === (int) ($pendingPreview['by_user_id'] ?? 0);
+    ?>
+        <div class="mb-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 p-4 shadow-card">
+            <p class="text-xs uppercase tracking-wide font-bold text-amber-800 dark:text-amber-300 mb-1">
+                Wacht op bevestiging
+            </p>
+            <p class="text-sm text-amber-900 dark:text-amber-100 mb-2">
+                <strong><?= e((string) $pendingPreview['by_name']) ?></strong> heeft de uitslag genoteerd:
+            </p>
+            <ul class="text-sm text-amber-900 dark:text-amber-100 mb-3 list-disc list-inside space-y-0.5">
+                <?php foreach (($pendingPreview['lines'] ?? []) as $ln): ?>
+                    <li><?= e($ln) ?></li>
+                <?php endforeach; ?>
+            </ul>
+            <?php if ($isRecorder): ?>
+                <p class="text-xs text-amber-800 dark:text-amber-300">Een tegenstander moet dit nog bevestigen of betwisten.</p>
+            <?php else: ?>
+                <div class="grid grid-cols-2 gap-2">
+                    <form method="post" action="<?= e(url('/matches/' . $match['id'] . '/confirm')) ?>">
+                        <?= csrf_field() ?>
+                        <button class="w-full rounded-lg bg-brand text-white font-semibold py-2.5 hover:bg-brand-dark">
+                            ✓ Klopt
+                        </button>
+                    </form>
+                    <form method="post" action="<?= e(url('/matches/' . $match['id'] . '/dispute')) ?>"
+                          onsubmit="return confirm('Uitslag betwisten? De match gaat terug naar bezig.');">
+                        <?= csrf_field() ?>
+                        <button class="w-full rounded-lg bg-white dark:bg-slate-900 border border-amber-300 text-amber-900 dark:text-amber-200 font-semibold py-2.5 hover:bg-amber-100">
+                            ✗ Klopt niet
+                        </button>
+                    </form>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <?php if ($type === 'team_score' && $match['state'] === 'completed'):
         $bySide = ['A' => [], 'B' => []];
@@ -154,11 +203,65 @@ $type  = $game['score_type'] ?? 'win_loss';
             </div>
         <?php endif; ?>
 
+        <?php if (!empty($series) && ($series['target'] ?? 0) > 0):
+            $tally = $series['tally'] ?? [];
+            $names = $series['names'] ?? [];
+            arsort($tally);
+            $finished = !empty($series['finished']);
+        ?>
+            <div class="mt-4 rounded-2xl bg-navy text-white p-4 shadow-card">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs uppercase tracking-widest text-white/60 font-bold">
+                        Best of <?= (int) $series['target'] ?> · serie
+                    </p>
+                    <p class="text-xs text-white/60"><?= count($series['matches']) ?> gespeeld · <?= (int) $series['majority'] ?> nodig</p>
+                </div>
+                <ul class="space-y-1.5">
+                    <?php foreach ($tally as $uid => $w):
+                        $pct = (int) round(($w / max(1, (int) $series['majority'])) * 100);
+                    ?>
+                        <li class="flex items-center gap-2">
+                            <span class="text-sm font-semibold flex-1 truncate"><?= e($names[$uid] ?? '?') ?></span>
+                            <span class="text-2xl font-black tabular-nums"><?= (int) $w ?></span>
+                        </li>
+                        <div class="h-1.5 rounded bg-white/10 overflow-hidden">
+                            <div class="h-full bg-brand" style="width: <?= min(100, $pct) ?>%"></div>
+                        </div>
+                    <?php endforeach; ?>
+                </ul>
+                <?php if ($finished && !empty($series['leader'])): ?>
+                    <p class="text-center text-sm font-bold text-brand mt-3">
+                        🏆 Serie gewonnen door <?= e($names[$series['leader']] ?? '?') ?>
+                    </p>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
         <form method="post" action="<?= e(url('/matches/' . $match['id'] . '/rematch')) ?>" class="mt-3">
             <?= csrf_field() ?>
+            <?php if (empty($series['target']) && empty($series)): ?>
+                <!-- Optie: meteen een Best-of-N serie starten -->
+                <div class="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 mb-2 shadow-card">
+                    <p class="text-xs font-bold text-navy dark:text-slate-100 mb-2">Speel als serie?</p>
+                    <div class="grid grid-cols-4 gap-2 text-sm">
+                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light has-[:checked]:border-brand has-[:checked]:text-brand-dark font-semibold">
+                            <input type="radio" name="best_of" value="0" checked class="sr-only"> Los
+                        </label>
+                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light has-[:checked]:border-brand has-[:checked]:text-brand-dark font-semibold">
+                            <input type="radio" name="best_of" value="3" class="sr-only"> Bo3
+                        </label>
+                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light has-[:checked]:border-brand has-[:checked]:text-brand-dark font-semibold">
+                            <input type="radio" name="best_of" value="5" class="sr-only"> Bo5
+                        </label>
+                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light has-[:checked]:border-brand has-[:checked]:text-brand-dark font-semibold">
+                            <input type="radio" name="best_of" value="7" class="sr-only"> Bo7
+                        </label>
+                    </div>
+                </div>
+            <?php endif; ?>
             <button class="w-full rounded-lg bg-navy text-white font-semibold px-4 py-3 hover:bg-navy-soft flex items-center justify-center gap-2">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6M20 20v-6h-6M5 14a8 8 0 0 0 14.5 2M19 10A8 8 0 0 0 4.5 8"/></svg>
-                Rematch — punten opsparen
+                <?= !empty($series) && empty($series['finished']) ? 'Volgende match in de serie' : 'Rematch — punten opsparen' ?>
             </button>
         </form>
         <p class="text-center text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -182,6 +285,28 @@ $type  = $game['score_type'] ?? 'win_loss';
         <a href="<?= e(url('/matches')) ?>" class="text-sm text-slate-500 dark:text-slate-400 hover:text-navy">← terug naar matches</a>
     </div>
 </div>
+
+<?php if (in_array($match['state'], ['in_progress', 'pending_confirmation'], true)): ?>
+<script>
+// Realtime: bij state-wisseling herladen — gebruikt SSE, valt terug op niets
+// (we wachten gewoon op de volgende user-actie als SSE niet werkt).
+(function () {
+    if (!('EventSource' in window)) return;
+    const url = <?= json_encode(url('/m/' . $match['join_token'] . '/events')) ?>;
+    const initialState = <?= json_encode($match['state']) ?>;
+    try {
+        const es = new EventSource(url);
+        es.addEventListener('snapshot', (ev) => {
+            try {
+                const snap = JSON.parse(ev.data);
+                if (snap.state && snap.state !== initialState) { es.close(); location.reload(); }
+            } catch (e) {}
+        });
+        es.onerror = () => es.close();
+    } catch (e) {}
+})();
+</script>
+<?php endif; ?>
 
 <?php if ($match['state'] === 'in_progress'): ?>
 <script>

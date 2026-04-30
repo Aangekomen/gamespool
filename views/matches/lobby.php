@@ -141,28 +141,48 @@ $shareText = 'Speel je een potje ' . ($game['name'] ?? '') . ' met me? ' . $shar
             });
         }
 
-        // Lichte JSON-poll: alleen herladen wanneer er echt iets verandert.
-        // Geen volledig page-refresh elke paar seconden meer.
+        // Realtime updates via SSE — valt automatisch terug op JSON-polling
+        // als de browser geen EventSource heeft of de stream faalt (Plesk
+        // proxies kunnen lang-lopende requests sluiten).
         <?php if ($isHost && count($participants) < 2): ?>
-            const initial = <?= (int) count($participants) ?>;
-            const stateUrl = <?= json_encode(url('/m/' . $match['join_token'] . '/state.json')) ?>;
-            let stops = 0;
-            const poll = async () => {
+            const initial   = <?= (int) count($participants) ?>;
+            const sseUrl    = <?= json_encode(url('/m/' . $match['join_token'] . '/events')) ?>;
+            const stateUrl  = <?= json_encode(url('/m/' . $match['join_token'] . '/state.json')) ?>;
+
+            function shouldReload(snap) {
+                return snap && (snap.state !== 'waiting' || (snap.participant_count | 0) > initial);
+            }
+
+            let usedSse = false;
+            if ('EventSource' in window) {
                 try {
-                    const res = await fetch(stateUrl, { headers: { 'Accept': 'application/json' } });
-                    if (!res.ok) throw new Error('bad status');
-                    const j = await res.json();
-                    if (j.ok && (j.state !== 'waiting' || (j.participant_count|0) > initial)) {
-                        location.reload();
-                        return;
-                    }
-                    stops = 0;
-                } catch (e) {
-                    if (++stops > 5) return; // give up after a while
-                }
+                    const es = new EventSource(sseUrl);
+                    usedSse = true;
+                    es.addEventListener('snapshot', (ev) => {
+                        try {
+                            const snap = JSON.parse(ev.data);
+                            if (shouldReload(snap)) { es.close(); location.reload(); }
+                        } catch (e) {}
+                    });
+                    es.onerror = () => { es.close(); usedSse = false; startPolling(); };
+                } catch (e) { usedSse = false; }
+            }
+
+            function startPolling() {
+                let stops = 0;
+                const poll = async () => {
+                    try {
+                        const res = await fetch(stateUrl, { headers: { 'Accept': 'application/json' } });
+                        if (!res.ok) throw new Error('bad status');
+                        const j = await res.json();
+                        if (j.ok && shouldReload(j)) return location.reload();
+                        stops = 0;
+                    } catch (e) { if (++stops > 5) return; }
+                    setTimeout(poll, 5000);
+                };
                 setTimeout(poll, 5000);
-            };
-            setTimeout(poll, 5000);
+            }
+            if (!usedSse) startPolling();
         <?php endif; ?>
     })();
 </script>

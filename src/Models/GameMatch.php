@@ -97,25 +97,7 @@ class GameMatch
         $game = Game::find((int) $match['game_id']);
         if (!$game) return;
 
-        $existing = self::participants($matchId);
-        $byId = [];
-        foreach ($existing as $row) $byId[(int) $row['id']] = $row;
-
-        // Merge inputs onto existing rows
-        $merged = [];
-        foreach ($participantInputs as $row) {
-            $id = (int) ($row['id'] ?? 0);
-            $base = $byId[$id] ?? [];
-            $merged[] = array_merge($base, [
-                'id'         => $id,
-                'user_id'    => $base['user_id'] ?? null,
-                'team_id'    => $base['team_id'] ?? null,
-                'match_side' => $row['match_side'] ?? ($base['match_side'] ?? null),
-                'raw_score'  => isset($row['raw_score']) ? (int) $row['raw_score'] : null,
-                'result'     => $row['result'] ?? null,
-            ]);
-        }
-
+        $merged = self::mergeInputs($matchId, $participantInputs);
         $computed = ScoreEngine::compute($game, $merged);
 
         Database::pdo()->beginTransaction();
@@ -137,7 +119,10 @@ class GameMatch
                 );
             }
             Database::query(
-                'UPDATE matches SET state = "completed", ended_at = NOW() WHERE id = ?',
+                'UPDATE matches
+                    SET state = "completed", ended_at = NOW(),
+                        pending_recorded_by = NULL, pending_recorded_at = NULL, pending_payload = NULL
+                  WHERE id = ?',
                 [$matchId]
             );
             ScoreEngine::persistRatings($game, $computed);
@@ -146,6 +131,131 @@ class GameMatch
             if (Database::pdo()->inTransaction()) Database::pdo()->rollBack();
             throw $e;
         }
+    }
+
+    private static function mergeInputs(int $matchId, array $participantInputs): array
+    {
+        $existing = self::participants($matchId);
+        $byId = [];
+        foreach ($existing as $row) $byId[(int) $row['id']] = $row;
+        $merged = [];
+        foreach ($participantInputs as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            $base = $byId[$id] ?? [];
+            $merged[] = array_merge($base, [
+                'id'         => $id,
+                'user_id'    => $base['user_id'] ?? null,
+                'team_id'    => $base['team_id'] ?? null,
+                'match_side' => $row['match_side'] ?? ($base['match_side'] ?? null),
+                'raw_score'  => isset($row['raw_score']) ? (int) $row['raw_score'] : null,
+                'result'     => $row['result'] ?? null,
+            ]);
+        }
+        return $merged;
+    }
+
+    /**
+     * Voorlopige uitslag opslaan: andere deelnemers moeten nog bevestigen.
+     * Bij solo-match (1 deelnemer) wordt het meteen completed.
+     */
+    public static function recordPending(int $matchId, int $byUserId, array $participantInputs): void
+    {
+        $merged = self::mergeInputs($matchId, $participantInputs);
+        $userIds = array_unique(array_filter(array_map(fn ($r) => (int) ($r['user_id'] ?? 0), $merged)));
+        // Single-player edge case: niets om te bevestigen, gewoon afronden
+        if (count($userIds) <= 1) {
+            self::recordResults($matchId, $participantInputs);
+            return;
+        }
+        Database::query(
+            'UPDATE matches
+                SET state = "pending_confirmation",
+                    pending_recorded_by = ?, pending_recorded_at = NOW(), pending_payload = ?
+              WHERE id = ?',
+            [$byUserId, json_encode($participantInputs, JSON_THROW_ON_ERROR), $matchId]
+        );
+    }
+
+    /**
+     * Bevestiger neemt pending_payload over en start volledige score-flow.
+     */
+    public static function confirmPending(int $matchId): void
+    {
+        $row = Database::fetch('SELECT pending_payload FROM matches WHERE id = ?', [$matchId]);
+        if (!$row || empty($row['pending_payload'])) return;
+        try {
+            $inputs = json_decode((string) $row['pending_payload'], true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) { return; }
+        if (!is_array($inputs)) return;
+        self::recordResults($matchId, $inputs);
+    }
+
+    /**
+     * Andere deelnemer betwist de uitslag — terug naar in_progress.
+     */
+    public static function disputePending(int $matchId): void
+    {
+        Database::query(
+            'UPDATE matches
+                SET state = "in_progress",
+                    pending_recorded_by = NULL, pending_recorded_at = NULL, pending_payload = NULL
+              WHERE id = ? AND state = "pending_confirmation"',
+            [$matchId]
+        );
+    }
+
+    /**
+     * Best-of-N serie: een groep matches die dezelfde series_id delen.
+     * Returns ['matches' => [...], 'tally' => [user_id => wins], 'target' => N,
+     *          'leader' => user_id|null, 'finished' => bool]
+     */
+    public static function seriesSummary(string $seriesId): array
+    {
+        $matches = Database::fetchAll(
+            "SELECT m.id, m.state, m.started_at, m.ended_at, m.series_target
+               FROM matches m
+              WHERE m.series_id = ?
+              ORDER BY m.id ASC",
+            [$seriesId]
+        );
+        $target = 0;
+        foreach ($matches as $m) {
+            if (!empty($m['series_target'])) { $target = (int) $m['series_target']; break; }
+        }
+        if (!$matches) {
+            return ['matches' => [], 'tally' => [], 'target' => $target, 'leader' => null, 'finished' => false, 'majority' => 0];
+        }
+        $ids = array_column($matches, 'id');
+        $place = implode(',', array_fill(0, count($ids), '?'));
+        $rows = Database::fetchAll(
+            "SELECT mp.user_id, mp.result, u.display_name
+               FROM match_participants mp
+               JOIN users u ON u.id = mp.user_id
+              WHERE mp.match_id IN ($place)
+                AND mp.result = 'win'",
+            $ids
+        );
+        $tally = []; $names = [];
+        foreach ($rows as $r) {
+            $uid = (int) $r['user_id'];
+            $tally[$uid] = ($tally[$uid] ?? 0) + 1;
+            $names[$uid] = (string) $r['display_name'];
+        }
+        $leader = null; $top = 0;
+        foreach ($tally as $uid => $w) {
+            if ($w > $top) { $top = $w; $leader = $uid; }
+        }
+        $majority = $target > 0 ? (int) floor($target / 2) + 1 : 0;
+        $finished = $majority > 0 && $top >= $majority;
+        return [
+            'matches'  => $matches,
+            'tally'    => $tally,
+            'names'    => $names,
+            'target'   => $target,
+            'leader'   => $leader,
+            'finished' => $finished,
+            'majority' => $majority,
+        ];
     }
 
     /**
