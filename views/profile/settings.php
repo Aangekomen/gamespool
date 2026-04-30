@@ -14,10 +14,10 @@ $inputCls = 'w-full rounded-lg bg-white dark:bg-slate-800 border border-slate-30
     <a href="<?= e(url('/profile')) ?>" class="text-sm text-slate-500 dark:text-slate-400 hover:text-navy">← profiel</a>
 </div>
 
-<!-- Edit info -->
-<details open class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-3">
-    <summary class="text-sm font-bold text-navy dark:text-slate-100 cursor-pointer select-none">Persoonsgegevens</summary>
-    <form method="post" action="<?= e(url('/profile')) ?>" class="mt-4 space-y-3">
+<!-- Persoonsgegevens -->
+<div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-3">
+    <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-3">Persoonsgegevens</h2>
+    <form method="post" action="<?= e(url('/profile')) ?>" class="space-y-3">
         <?= csrf_field() ?>
         <input type="hidden" name="_method" value="PATCH">
         <div class="grid grid-cols-2 gap-2">
@@ -47,24 +47,24 @@ $inputCls = 'w-full rounded-lg bg-white dark:bg-slate-800 border border-slate-30
         </div>
         <button class="w-full min-h-[44px] rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Opslaan</button>
     </form>
-</details>
+</div>
 
-<!-- Avatar upload -->
-<details class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-3">
-    <summary class="text-sm font-bold text-navy dark:text-slate-100 cursor-pointer select-none">Profielfoto</summary>
-    <form method="post" action="<?= e(url('/profile/avatar')) ?>" enctype="multipart/form-data" class="mt-4 space-y-3">
+<!-- Profielfoto -->
+<div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-3">
+    <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-3">Profielfoto</h2>
+    <form method="post" action="<?= e(url('/profile/avatar')) ?>" enctype="multipart/form-data" class="space-y-3">
         <?= csrf_field() ?>
         <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" required
                class="w-full text-sm text-slate-700 dark:text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-brand-light file:text-brand-dark file:font-semibold hover:file:bg-brand/20">
         <p class="text-xs text-slate-500 dark:text-slate-400">JPG, PNG of WebP, max ~10 MB — wordt server-side bijgesneden tot 256×256 vierkant.</p>
         <button class="w-full min-h-[44px] rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Upload</button>
     </form>
-</details>
+</div>
 
-<!-- Change password -->
-<details class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-3">
-    <summary class="text-sm font-bold text-navy dark:text-slate-100 cursor-pointer select-none">Wachtwoord wijzigen</summary>
-    <form method="post" action="<?= e(url('/profile/password')) ?>" class="mt-4 space-y-3">
+<!-- Wachtwoord wijzigen -->
+<div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-3">
+    <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-3">Wachtwoord wijzigen</h2>
+    <form method="post" action="<?= e(url('/profile/password')) ?>" class="space-y-3">
         <?= csrf_field() ?>
         <div>
             <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Huidig wachtwoord</label>
@@ -82,12 +82,12 @@ $inputCls = 'w-full rounded-lg bg-white dark:bg-slate-800 border border-slate-30
         </div>
         <button class="w-full min-h-[44px] rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Wijzig wachtwoord</button>
     </form>
-</details>
+</div>
 
-<!-- Delete account -->
-<details class="rounded-2xl bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/40 p-4 shadow-card">
-    <summary class="text-sm font-bold text-red-700 cursor-pointer select-none">Account verwijderen</summary>
-    <form method="post" action="<?= e(url('/profile/delete')) ?>" class="mt-4 space-y-3"
+<!-- Account verwijderen -->
+<div class="rounded-2xl bg-white dark:bg-slate-900 border border-red-200 dark:border-red-900/40 p-4 shadow-card">
+    <h2 class="text-sm font-bold text-red-700 mb-3">Account verwijderen</h2>
+    <form method="post" action="<?= e(url('/profile/delete')) ?>" class="space-y-3"
           onsubmit="return confirm('Weet je dit echt zeker? Dit kan niet ongedaan worden gemaakt.');">
         <?= csrf_field() ?>
         <p class="text-sm text-slate-600 dark:text-slate-300">
@@ -101,4 +101,4 @@ $inputCls = 'w-full rounded-lg bg-white dark:bg-slate-800 border border-slate-30
             Verwijder mijn account
         </button>
     </form>
-</details>
+</div>
