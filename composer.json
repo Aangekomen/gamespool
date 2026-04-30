@@ -1,6 +1,6 @@
 {
-    "name": "aangekomen/gamespool",
-    "description": "Score & competition system for bar games (pool, darts, etc.)",
+    "name": "aangekomen/flexicomp",
+    "description": "FlexiComp — flexibel score- en competitiesysteem voor barspellen (pool, darts, etc.)",
     "type": "project",
     "require": {
         "php": ">=8.1",

@@ -8,6 +8,7 @@ use GamesPool\Controllers\GameController;
 use GamesPool\Controllers\HomeController;
 use GamesPool\Controllers\LeaderboardController;
 use GamesPool\Controllers\MatchController;
+use GamesPool\Controllers\TeamController;
 
 class App
 {
@@ -69,6 +70,12 @@ class App
 
         // Leaderboard
         $r->get('/leaderboard', [LeaderboardController::class, 'index']);
+
+        // Teams
+        $r->get('/teams',                 [TeamController::class, 'index']);
+        $r->post('/teams',                [TeamController::class, 'create']);
+        $r->post('/teams/join',           [TeamController::class, 'join']);
+        $r->post('/teams/{id}/leave',     [TeamController::class, 'leave']);
     }
 
     public function run(): void

@@ -1,6 +1,6 @@
-# GamesPool
+# FlexiComp
 
-Score- en competitiesysteem voor barspellen (poolbiljart, darten, etc.). Gebruikers, teams, competities, leaderboards en QR-codes om snel mee te doen.
+Flexibel score- en competitiesysteem voor barspellen (poolbiljart, darten, etc.). Gebruikers, teams, competities, leaderboards en QR-codes om snel mee te doen.
 
 ## Stack
 

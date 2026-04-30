@@ -1,11 +1,36 @@
 <?php /** @var array<string,string> $sections */ ?>
+<?php
+$nav = [
+    'home'   => ['label' => 'Home',      'url' => url('/'),            'icon' => 'home',     'match' => ['/']],
+    'matches'=> ['label' => 'Matches',   'url' => url('/matches'),     'icon' => 'matches',  'match' => ['/matches', '/matches/']],
+    'teams'  => ['label' => 'Teams',     'url' => url('/teams'),       'icon' => 'teams',    'match' => ['/teams']],
+    'rank'   => ['label' => 'Ranglijst', 'url' => url('/leaderboard'), 'icon' => 'rank',     'match' => ['/leaderboard']],
+];
+$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$isActive = function (array $matches) use ($path): bool {
+    foreach ($matches as $m) {
+        if ($m === '/') { if ($path === '/') return true; continue; }
+        if (str_starts_with($path, $m)) return true;
+    }
+    return false;
+};
+$icon = function (string $name): string {
+    return match ($name) {
+        'home'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11l9-8 9 8v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2v-9z"/></svg>',
+        'matches' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 2"/></svg>',
+        'teams'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        'rank'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M3 21h4V10H3v11zM10 21h4V3h-4v18zM17 21h4V14h-4v7z"/></svg>',
+        default   => '',
+    };
+};
+?>
 <!doctype html>
 <html lang="nl" class="h-full bg-white text-slate-800">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#171a56">
-    <title><?= e($title ?? 'GamesPool') ?></title>
+    <title><?= e($title ?? 'FlexiComp') ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -33,6 +58,9 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23171a56'/><circle cx='32' cy='32' r='14' fill='%2335b782'/></svg>">
     <style>
         body { -webkit-tap-highlight-color: transparent; font-family: 'Inter', system-ui, sans-serif; }
+        @supports (padding: env(safe-area-inset-bottom)) {
+            .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem); }
+        }
     </style>
 </head>
 <body class="min-h-full flex flex-col bg-surface">
@@ -42,13 +70,14 @@
                 <span class="inline-block w-6 h-6 rounded-md bg-navy relative">
                     <span class="absolute inset-1 rounded-sm bg-brand"></span>
                 </span>
-                GamesPool
+                FlexiComp
             </a>
-            <nav class="flex items-center gap-1 sm:gap-2 text-sm">
+            <nav class="flex items-center gap-1 text-sm">
                 <?php if (user()): ?>
-                    <a href="<?= e(url('/leaderboard')) ?>" class="px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Ranglijst</a>
-                    <a href="<?= e(url('/matches')) ?>" class="px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Matches</a>
-                    <a href="<?= e(url('/games')) ?>" class="px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Spellen</a>
+                    <a href="<?= e(url('/games')) ?>" class="hidden md:inline-block px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Spellen</a>
+                    <a href="<?= e(url('/leaderboard')) ?>" class="hidden md:inline-block px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Ranglijst</a>
+                    <a href="<?= e(url('/matches')) ?>" class="hidden md:inline-block px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Matches</a>
+                    <a href="<?= e(url('/teams')) ?>" class="hidden md:inline-block px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Teams</a>
                     <form method="post" action="<?= e(url('/logout')) ?>">
                         <?= csrf_field() ?>
                         <button class="px-3 py-1.5 rounded-md text-slate-500 hover:text-navy hover:bg-slate-100">Uitloggen</button>
@@ -61,7 +90,7 @@
         </div>
     </header>
 
-    <main class="flex-1">
+    <main class="flex-1 pb-24 md:pb-6">
         <div class="max-w-3xl mx-auto px-4 py-6 sm:py-8">
             <?php if ($msg = flash('success')): ?>
                 <div class="mb-4 rounded-md bg-brand-light border border-brand/30 px-4 py-3 text-brand-dark text-sm font-medium"><?= e((string) $msg) ?></div>
@@ -73,8 +102,23 @@
         </div>
     </main>
 
-    <footer class="text-center text-xs text-slate-400 py-6">
-        GamesPool · <?= date('Y') ?>
+    <?php if (user()): ?>
+        <!-- Mobile bottom tab bar -->
+        <nav class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 pb-safe">
+            <div class="max-w-3xl mx-auto grid grid-cols-4">
+                <?php foreach ($nav as $key => $item): $active = $isActive($item['match']); ?>
+                    <a href="<?= e($item['url']) ?>"
+                       class="flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium <?= $active ? 'text-brand-dark' : 'text-slate-500' ?>">
+                        <?= $icon($item['icon']) ?>
+                        <span><?= e($item['label']) ?></span>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </nav>
+    <?php endif; ?>
+
+    <footer class="text-center text-xs text-slate-400 py-6 hidden md:block">
+        FlexiComp · <?= date('Y') ?>
     </footer>
 </body>
 </html>

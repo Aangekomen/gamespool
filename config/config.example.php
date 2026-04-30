@@ -5,7 +5,7 @@
  */
 return [
     'app' => [
-        'name'   => 'GamesPool',
+        'name'   => 'FlexiComp',
         'url'    => 'https://gamespool.example.com', // no trailing slash
         'env'    => 'production', // 'production' or 'development'
         'secret' => 'CHANGE_ME_TO_A_LONG_RANDOM_STRING', // used for signing
