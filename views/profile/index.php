@@ -61,7 +61,7 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
     <?php
         $isWin = $streak['type'] === 'win';
         $box = $isWin
-            ? 'bg-brand-light border-brand/30 text-brand-dark'
+            ? 'bg-brand-light dark:bg-brand-dark/25 border-brand/30 dark:border-brand/40 text-brand-dark dark:text-brand-light'
             : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-300';
         $icon = $isWin ? '🔥' : '💧';
         $label = $isWin ? 'win-streak' : 'loss-streak';
@@ -82,7 +82,7 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
 <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-4">
     <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-3">Resultaten</h2>
     <div class="grid grid-cols-3 gap-2 text-center">
-        <div class="rounded-lg bg-brand-light text-brand-dark py-3">
+        <div class="rounded-lg bg-brand-light dark:bg-brand-dark/25 text-brand-dark dark:text-brand-light py-3">
             <p class="text-xl font-bold tabular-nums"><?= (int) $stats['wins'] ?></p>
             <p class="text-[11px] uppercase tracking-wide font-semibold">Winst</p>
         </div>
@@ -108,8 +108,16 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
             : 'Tegen wie je het beste presteert';
         $box = $isNemesis
             ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/40'
-            : 'bg-brand-light border-brand/30';
-        $accent = $isNemesis ? 'text-red-700 dark:text-red-300' : 'text-brand-dark';
+            : 'bg-brand-light dark:bg-brand-dark/25 border-brand/30 dark:border-brand/40';
+        $accent = $isNemesis
+            ? 'text-red-700 dark:text-red-300'
+            : 'text-brand-dark dark:text-brand-light';
+        $nameCls = $isNemesis
+            ? 'text-navy dark:text-slate-100'
+            : 'text-navy dark:text-white';
+        $subCls = $isNemesis
+            ? 'text-slate-600 dark:text-slate-300'
+            : 'text-slate-700 dark:text-slate-200';
         $you = (int) $opp['your_wins'];
         $them = (int) $opp['their_wins'];
         $matches = (int) $opp['matches'];
@@ -117,7 +125,7 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
         $avatar = !empty($opp['avatar_path']) ? url('/uploads/avatars/' . $opp['avatar_path']) : null;
     ?>
         <div class="rounded-2xl border <?= $box ?> p-3 flex items-center gap-3 shadow-card">
-            <div class="w-10 h-10 rounded-full bg-white/40 dark:bg-slate-900/40 flex items-center justify-center text-lg shrink-0 overflow-hidden">
+            <div class="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-900/60 flex items-center justify-center text-lg shrink-0 overflow-hidden">
                 <?php if ($avatar): ?>
                     <img src="<?= e($avatar) ?>" alt="" class="w-full h-full object-cover">
                 <?php else: ?>
@@ -126,8 +134,8 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-[10px] uppercase tracking-wide font-bold <?= $accent ?>"><?= $emoji ?> <?= e($title) ?></p>
-                <p class="font-bold text-navy dark:text-slate-100 truncate"><?= e($name) ?></p>
-                <p class="text-[11px] text-slate-600 dark:text-slate-300 truncate">
+                <p class="font-bold truncate <?= $nameCls ?>"><?= e($name) ?></p>
+                <p class="text-[11px] truncate <?= $subCls ?>">
                     <?= $you ?>–<?= $them ?> over <?= $matches ?> wedstrijden · <?= e($subtitle) ?>
                 </p>
             </div>
@@ -160,9 +168,9 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
             <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
                 <?php foreach ($earned as $b): ?>
                     <div title="<?= e($b['description']) ?>"
-                         class="rounded-xl bg-brand-light border border-brand/30 p-3 text-center">
+                         class="rounded-xl bg-brand-light dark:bg-brand-dark/25 border border-brand/30 dark:border-brand/40 p-3 text-center">
                         <div class="text-2xl leading-none"><?= e($b['emoji']) ?></div>
-                        <p class="mt-1 text-[11px] font-bold text-brand-dark truncate"><?= e($b['label']) ?></p>
+                        <p class="mt-1 text-[11px] font-bold text-brand-dark dark:text-brand-light truncate"><?= e($b['label']) ?></p>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -201,7 +209,7 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
             <?php foreach ($teams as $t): ?>
                 <li class="flex items-center justify-between py-1">
                     <span class="text-sm text-slate-700 dark:text-slate-200"><?= e($t['name']) ?></span>
-                    <span class="text-[10px] uppercase tracking-wide font-semibold <?= $t['role'] === 'captain' ? 'text-brand-dark bg-brand-light' : 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800' ?> px-2 py-0.5 rounded-full">
+                    <span class="text-[10px] uppercase tracking-wide font-semibold <?= $t['role'] === 'captain' ? 'text-brand-dark dark:text-brand-light bg-brand-light dark:bg-brand-dark/25' : 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800' ?> px-2 py-0.5 rounded-full">
                         <?= e($t['role']) ?>
                     </span>
                 </li>
@@ -228,7 +236,7 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
                             <p class="text-xs text-slate-500 dark:text-slate-400"><?= e(date('d-m H:i', strtotime((string) $m['started_at']))) ?></p>
                         </div>
                         <span class="text-[11px] font-medium px-2 py-0.5 rounded-full
-                            <?= $m['state'] === 'in_progress' ? 'bg-amber-100 text-amber-800' : ($m['state'] === 'completed' ? 'bg-brand-light text-brand-dark' : 'bg-slate-100 text-slate-600') ?>">
+                            <?= $m['state'] === 'in_progress' ? 'bg-amber-100 text-amber-800' : ($m['state'] === 'completed' ? 'bg-brand-light dark:bg-brand-dark/25 text-brand-dark dark:text-brand-light' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300') ?>">
                             <?= $m['state'] === 'in_progress' ? 'Bezig' : ($m['state'] === 'completed' ? 'Klaar' : '×') ?>
                         </span>
                     </a>

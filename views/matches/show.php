@@ -25,7 +25,7 @@ $type  = $game['score_type'] ?? 'win_loss';
             $stateBadge = match ($match['state']) {
                 'in_progress'           => ['Bezig',          'bg-amber-100 text-amber-800'],
                 'pending_confirmation'  => ['Wacht op bevestiging', 'bg-amber-100 text-amber-800'],
-                'completed'             => ['Afgerond',       'bg-brand-light text-brand-dark'],
+                'completed'             => ['Afgerond',       'bg-brand-light dark:bg-brand-dark/25 text-brand-dark dark:text-brand-light'],
                 'waiting'               => ['Wacht',          'bg-amber-100 text-amber-800'],
                 default                 => ['Geannuleerd',    'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'],
             };
@@ -88,13 +88,13 @@ $type  = $game['score_type'] ?? 'win_loss';
             <?php foreach (['A' => $aWin, 'B' => $bWin] as $side => $isWin):
                 $score = $side === 'A' ? $scoreA : $scoreB;
             ?>
-                <div class="rounded-2xl border <?= $isWin ? 'border-brand bg-brand-light' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900' ?> p-4 text-center shadow-card">
-                    <p class="text-[11px] uppercase tracking-wide font-bold <?= $isWin ? 'text-brand-dark' : 'text-slate-500 dark:text-slate-400' ?>">Team <?= $side ?></p>
-                    <p class="text-4xl font-black tabular-nums <?= $isWin ? 'text-navy' : 'text-navy dark:text-slate-100' ?>"><?= e((string) ($score ?? '–')) ?></p>
+                <div class="rounded-2xl border <?= $isWin ? 'border-brand bg-brand-light dark:bg-brand-dark/25' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900' ?> p-4 text-center shadow-card">
+                    <p class="text-[11px] uppercase tracking-wide font-bold <?= $isWin ? 'text-brand-dark dark:text-brand-light' : 'text-slate-500 dark:text-slate-400' ?>">Team <?= $side ?></p>
+                    <p class="text-4xl font-black tabular-nums <?= $isWin ? 'text-navy dark:text-white' : 'text-navy dark:text-slate-100' ?>"><?= e((string) ($score ?? '–')) ?></p>
                     <ul class="mt-2 space-y-1">
                         <?php foreach ($bySide[$side] as $sp):
                             $spName = $sp['display_name'] ?? '–';
-                            $spTextCls = $isWin ? 'text-navy' : 'text-navy dark:text-slate-100';
+                            $spTextCls = $isWin ? 'text-navy dark:text-white' : 'text-navy dark:text-slate-100';
                         ?>
                             <li class="text-sm font-semibold truncate <?= $spTextCls ?>"><?= e($spName) ?></li>
                         <?php endforeach; ?>
@@ -109,15 +109,13 @@ $type  = $game['score_type'] ?? 'win_loss';
             $name = $p['display_name'] ?? 'Onbekend';
             $isWinner = ($p['result'] ?? null) === 'win';
 
-            // Winner card: keep its content readable on the brand-light background
-            // in both light and dark mode (no dark: text overrides).
             $cardCls = $isWinner
-                ? 'border-brand bg-brand-light'
+                ? 'border-brand bg-brand-light dark:bg-brand-dark/25'
                 : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900';
-            $nameCls   = $isWinner ? 'font-semibold text-navy truncate' : 'font-semibold text-navy dark:text-slate-100 truncate';
-            $subCls    = $isWinner ? 'text-xs text-brand-dark' : 'text-xs text-slate-500 dark:text-slate-400';
-            $bigCls    = $isWinner ? 'text-lg font-bold tabular-nums text-navy' : 'text-lg font-bold tabular-nums text-navy dark:text-slate-100';
-            $avatarCls = $isWinner ? 'bg-white text-brand-dark' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
+            $nameCls   = $isWinner ? 'font-semibold text-navy dark:text-white truncate' : 'font-semibold text-navy dark:text-slate-100 truncate';
+            $subCls    = $isWinner ? 'text-xs text-brand-dark dark:text-brand-light' : 'text-xs text-slate-500 dark:text-slate-400';
+            $bigCls    = $isWinner ? 'text-lg font-bold tabular-nums text-navy dark:text-white' : 'text-lg font-bold tabular-nums text-navy dark:text-slate-100';
+            $avatarCls = $isWinner ? 'bg-white dark:bg-slate-900 text-brand-dark' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
         ?>
             <li class="rounded-xl border <?= $cardCls ?> p-3 flex items-center gap-3 shadow-card">
                 <div class="w-10 h-10 rounded-full <?= $avatarCls ?> flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden">
@@ -187,13 +185,13 @@ $type  = $game['score_type'] ?? 'win_loss';
                 <div class="grid grid-cols-3 items-center gap-2">
                     <div class="text-center min-w-0">
                         <p class="text-xs text-slate-500 dark:text-slate-400 truncate"><?= e((string) $h2h['a_name']) ?></p>
-                        <p class="text-3xl font-black tabular-nums <?= $aw > $bw ? 'text-brand-dark' : 'text-navy dark:text-slate-100' ?>"><?= $aw ?></p>
+                        <p class="text-3xl font-black tabular-nums <?= $aw > $bw ? 'text-brand-dark dark:text-brand-light' : 'text-navy dark:text-slate-100' ?>"><?= $aw ?></p>
                         <p class="text-[10px] uppercase tracking-wide text-slate-400">winsten · <?= $ap ?> pt</p>
                     </div>
                     <div class="text-center text-slate-400 font-bold">vs</div>
                     <div class="text-center min-w-0">
                         <p class="text-xs text-slate-500 dark:text-slate-400 truncate"><?= e((string) $h2h['b_name']) ?></p>
-                        <p class="text-3xl font-black tabular-nums <?= $bw > $aw ? 'text-brand-dark' : 'text-navy dark:text-slate-100' ?>"><?= $bw ?></p>
+                        <p class="text-3xl font-black tabular-nums <?= $bw > $aw ? 'text-brand-dark dark:text-brand-light' : 'text-navy dark:text-slate-100' ?>"><?= $bw ?></p>
                         <p class="text-[10px] uppercase tracking-wide text-slate-400">winsten · <?= $bp ?> pt</p>
                     </div>
                 </div>
@@ -244,16 +242,16 @@ $type  = $game['score_type'] ?? 'win_loss';
                 <div class="rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 mb-2 shadow-card">
                     <p class="text-xs font-bold text-navy dark:text-slate-100 mb-2">Speel als serie?</p>
                     <div class="grid grid-cols-4 gap-2 text-sm">
-                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light has-[:checked]:border-brand has-[:checked]:text-brand-dark font-semibold">
+                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light font-semibold">
                             <input type="radio" name="best_of" value="0" checked class="sr-only"> Los
                         </label>
-                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light has-[:checked]:border-brand has-[:checked]:text-brand-dark font-semibold">
+                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light font-semibold">
                             <input type="radio" name="best_of" value="3" class="sr-only"> Bo3
                         </label>
-                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light has-[:checked]:border-brand has-[:checked]:text-brand-dark font-semibold">
+                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light font-semibold">
                             <input type="radio" name="best_of" value="5" class="sr-only"> Bo5
                         </label>
-                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light has-[:checked]:border-brand has-[:checked]:text-brand-dark font-semibold">
+                        <label class="flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 py-2 cursor-pointer hover:border-brand has-[:checked]:bg-brand-light dark:has-[:checked]:bg-brand-dark/25 has-[:checked]:border-brand has-[:checked]:text-brand-dark dark:has-[:checked]:text-brand-light font-semibold">
                             <input type="radio" name="best_of" value="7" class="sr-only"> Bo7
                         </label>
                     </div>

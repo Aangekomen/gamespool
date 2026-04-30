@@ -41,7 +41,7 @@
             } elseif ($m['state'] === 'completed') {
                 $r = $m['my_result'] ?? null;
                 $badge = match ($r) {
-                    'win'  => ['Gewonnen', 'bg-brand-light text-brand-dark'],
+                    'win'  => ['Gewonnen', 'bg-brand-light dark:bg-brand-dark/25 text-brand-dark dark:text-brand-light'],
                     'loss' => ['Verloren', 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300'],
                     'draw' => ['Gelijk', 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'],
                     default => ['Afgerond', 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'],
