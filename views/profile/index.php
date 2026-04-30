@@ -101,11 +101,11 @@ $displayName = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '
 <?php if (!empty($nemesis) || !empty($favOpponent)): ?>
     <?php $rivalCard = function (array $opp, string $kind) {
         $isNemesis = $kind === 'nemesis';
-        $emoji = $isNemesis ? '😈' : '🥷';
-        $title = $isNemesis ? 'Nemesis' : 'Comfortabele tegenstander';
+        $emoji = $isNemesis ? '⚔️' : '🎯';
+        $title = $isNemesis ? 'Rivaal' : 'Vaste klant';
         $subtitle = $isNemesis
-            ? 'Verslaat jou vaker dan andersom'
-            : 'Tegen wie je het beste presteert';
+            ? 'Wint vaker van jou dan andersom'
+            : 'Hier win je meestal van';
         $box = $isNemesis
             ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/40'
             : 'bg-brand-light dark:bg-brand-dark/25 border-brand/30 dark:border-brand/40';
