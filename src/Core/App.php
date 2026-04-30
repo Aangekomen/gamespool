@@ -175,6 +175,20 @@ class App
         $this->maybeCleanupStaleMatches();
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $uri    = $_SERVER['REQUEST_URI'] ?? '/';
+
+        // PHP file-sessions locken per gebruiker: zolang request A de lock
+        // vasthoudt, wacht request B oneindig. Voor pure leesacties (GET)
+        // is er geen reden om de lock open te houden — sluit hem direct
+        // zodat parallel een andere tab nooit blijft hangen achter een
+        // trage of lang-lopende GET (SSE-stream, langzame query, ...).
+        // POST/PUT/PATCH/DELETE schrijven flash-messages dus blijven open.
+        // CSRF-token alvast aanraken zodat views geen schrijfactie triggeren
+        // nadat output al gestart is.
+        if ($method === 'GET' && session_status() === PHP_SESSION_ACTIVE) {
+            Csrf::token();
+            session_write_close();
+        }
+
         $this->router->dispatch($method, $uri);
     }
 

@@ -17,7 +17,9 @@ use GamesPool\Core\Slug;
  */
 class Tournament
 {
+    /** Quick-pick brackets in de admin-form. Custom getallen (2..32) zijn ook geldig. */
     public const SIZES = [2, 4, 8, 16];
+    public const MAX_PLAYERS = 32;
 
     public static function find(int $id): ?array
     {

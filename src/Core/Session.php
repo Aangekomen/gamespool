@@ -27,24 +27,44 @@ class Session
 
     public static function set(string $key, mixed $value): void
     {
+        self::ensureWritable();
         $_SESSION[$key] = $value;
     }
 
     public static function pull(string $key, mixed $default = null): mixed
     {
         $value = $_SESSION[$key] ?? $default;
-        unset($_SESSION[$key]);
+        if (isset($_SESSION[$key])) {
+            self::ensureWritable();
+            unset($_SESSION[$key]);
+        }
         return $value;
     }
 
     public static function flash(string $key, mixed $value): void
     {
+        self::ensureWritable();
         $_SESSION[$key] = $value;
     }
 
     public static function forget(string $key): void
     {
-        unset($_SESSION[$key]);
+        if (isset($_SESSION[$key])) {
+            self::ensureWritable();
+            unset($_SESSION[$key]);
+        }
+    }
+
+    /**
+     * Re-open de sessie als die door App::run gesloten is voor performance.
+     * PHP file-sessions locken; we sluiten ze meteen na auth bij GET-requests
+     * en re-locken pas op het moment dat we daadwerkelijk willen schrijven.
+     */
+    private static function ensureWritable(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            @session_start();
+        }
     }
 
     public static function destroy(): void
