@@ -53,6 +53,7 @@ $initial   = strtoupper(mb_substr((string) ($user['display_name'] ?? '?'), 0, 1)
         <a href="#account" class="px-3 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-navy dark:text-slate-100 font-medium">Account</a>
         <a href="#foto" class="px-3 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-navy dark:text-slate-100 font-medium">Foto</a>
         <a href="#wachtwoord" class="px-3 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-navy dark:text-slate-100 font-medium">Wachtwoord</a>
+        <a href="#voorkeuren" class="px-3 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-navy dark:text-slate-100 font-medium">Voorkeuren</a>
         <a href="#thema" class="px-3 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-navy dark:text-slate-100 font-medium">Thema</a>
         <a href="#gevarenzone" class="px-3 py-1.5 rounded-full bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-300 font-medium">Gevarenzone</a>
     </div>
@@ -113,11 +114,26 @@ $initial   = strtoupper(mb_substr((string) ($user['display_name'] ?? '?'), 0, 1)
                     <span id="avatarPreview"><?= e($initial) ?></span>
                 <?php endif; ?>
             </div>
-            <input type="file" name="avatar" id="avatarFile" accept="image/jpeg,image/png,image/webp" required
-                   class="flex-1 text-sm text-slate-700 dark:text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-brand-light file:text-brand-dark file:font-semibold hover:file:bg-brand/20">
+            <!-- Native file input is verborgen; we triggeren hem via een eigen knop
+                 zodat de browser-default tekst "Geen bestand gekozen" niet zichtbaar is -->
+            <input type="file" name="avatar" id="avatarFile" accept="image/jpeg,image/png,image/webp" required class="sr-only">
+            <div class="flex-1 min-w-0">
+                <label for="avatarFile"
+                       class="inline-flex items-center gap-2 cursor-pointer rounded-lg bg-brand-light dark:bg-brand-dark/25 text-brand-dark dark:text-brand-light font-semibold text-sm px-3 py-2 hover:bg-brand/20">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                    <span id="avatarBtnLabel"><?= $avatarSrc ? 'Vervang foto' : 'Kies een foto' ?></span>
+                </label>
+                <p id="avatarFileName" class="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
+                    <?= $avatarSrc ? 'Huidige foto wordt vervangen na upload' : 'Nog geen foto geselecteerd' ?>
+                </p>
+            </div>
         </div>
         <p class="text-[11px] text-slate-500 dark:text-slate-400">JPG, PNG of WebP, max ~10 MB. Wordt server-side bijgesneden tot 256×256.</p>
-        <button class="w-full min-h-[44px] rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Upload foto</button>
+        <button class="w-full min-h-[44px] rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark disabled:opacity-50 disabled:cursor-not-allowed" id="avatarUploadBtn" disabled>
+            Kies eerst een foto
+        </button>
     </form>
 </section>
 
@@ -148,6 +164,36 @@ $initial   = strtoupper(mb_substr((string) ($user['display_name'] ?? '?'), 0, 1)
             <input type="password" name="new_password_confirmation" autocomplete="new-password" required minlength="8" class="<?= $inputCls ?>">
         </div>
         <button class="w-full min-h-[44px] rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Wijzig wachtwoord</button>
+    </form>
+</section>
+
+<!-- Voorkeuren: spel-filter -->
+<?php $_allGames = \GamesPool\Models\Game::all(); $_activeSlug = \GamesPool\Core\ActiveGame::slug(); ?>
+<section id="voorkeuren" class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-card mb-3 scroll-mt-32">
+    <h2 class="text-sm font-bold text-navy dark:text-slate-100 mb-1 flex items-center gap-2">
+        <svg class="w-4 h-4 text-brand-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M6 12h12M10 18h4"/></svg>
+        Spel-voorkeur
+    </h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
+        Filter de app op één spel. Je matches en stats blijven globaal — alleen de lijsten op
+        home, /matches en /leaderboard worden gefilterd. Wissel later via deze plek.
+    </p>
+    <form method="post" action="<?= e(url('/active-game')) ?>" class="flex flex-wrap gap-2">
+        <?= csrf_field() ?>
+        <button name="game" value="" type="submit"
+                class="text-sm px-3 py-2 rounded-full border <?= $_activeSlug === null
+                    ? 'bg-navy text-white border-navy'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand' ?>">
+            Alle spellen
+        </button>
+        <?php foreach ($_allGames as $g): $sel = $_activeSlug === $g['slug']; ?>
+            <button name="game" value="<?= e($g['slug']) ?>" type="submit"
+                    class="text-sm px-3 py-2 rounded-full border <?= $sel
+                        ? 'bg-navy text-white border-navy'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-brand' ?>">
+                <?= e($g['name']) ?>
+            </button>
+        <?php endforeach; ?>
     </form>
 </section>
 
@@ -226,21 +272,31 @@ $initial   = strtoupper(mb_substr((string) ($user['display_name'] ?? '?'), 0, 1)
 
 <script>
 (function () {
-    // Live preview van profielfoto
-    const file = document.getElementById('avatarFile');
-    const preview = document.getElementById('avatarPreview');
-    if (file && preview) {
+    // Live preview van profielfoto + label/knop bijwerken op selectie
+    const file       = document.getElementById('avatarFile');
+    const preview    = document.getElementById('avatarPreview');
+    const fileName   = document.getElementById('avatarFileName');
+    const uploadBtn  = document.getElementById('avatarUploadBtn');
+    const btnLabel   = document.getElementById('avatarBtnLabel');
+    if (file) {
         file.addEventListener('change', () => {
             const f = file.files?.[0];
             if (!f) return;
-            const url = URL.createObjectURL(f);
-            if (preview.tagName === 'IMG') {
-                preview.src = url;
-            } else {
-                const img = document.createElement('img');
-                img.src = url; img.className = 'w-full h-full object-cover';
-                preview.replaceWith(img);
+            // Preview
+            if (preview) {
+                const url = URL.createObjectURL(f);
+                if (preview.tagName === 'IMG') {
+                    preview.src = url;
+                } else {
+                    const img = document.createElement('img');
+                    img.id = 'avatarPreview';
+                    img.src = url; img.className = 'w-full h-full object-cover';
+                    preview.replaceWith(img);
+                }
             }
+            if (fileName)  fileName.textContent  = f.name + ' geselecteerd';
+            if (btnLabel)  btnLabel.textContent  = 'Andere foto';
+            if (uploadBtn) { uploadBtn.disabled = false; uploadBtn.textContent = 'Upload foto'; }
         });
     }
 

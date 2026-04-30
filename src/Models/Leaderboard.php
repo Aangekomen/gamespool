@@ -70,16 +70,80 @@ class Leaderboard
     }
 
     /**
+     * Begin/eind van een specifiek seizoen (kalenderkwartaal).
+     * Quarter = 1..4. Levert ['since' => 'Y-m-d H:i:s', 'until' => '...'].
+     */
+    public static function seasonRange(int $year, int $quarter): array
+    {
+        $quarter = max(1, min(4, $quarter));
+        $startMonth = ($quarter - 1) * 3 + 1;
+        $sinceTs = strtotime(sprintf('%04d-%02d-01 00:00:00', $year, $startMonth));
+        $untilTs = strtotime('+3 months', $sinceTs) - 1;
+        return [
+            'since' => date('Y-m-d H:i:s', $sinceTs),
+            'until' => date('Y-m-d H:i:s', $untilTs),
+            'label' => 'Q' . $quarter . ' ' . $year,
+        ];
+    }
+
+    /**
+     * Geeft alle seizoenen waarin matches zijn afgerond, plus het huidige
+     * (ook als nog leeg). Recentste eerst. Levert array van
+     * ['key' => '2026Q2', 'year', 'quarter', 'label', 'is_current'].
+     */
+    public static function seasonsAvailable(): array
+    {
+        $rows = Database::fetchAll(
+            "SELECT DISTINCT YEAR(ended_at) AS y, QUARTER(ended_at) AS q
+               FROM matches
+              WHERE state = 'completed' AND ended_at IS NOT NULL
+              ORDER BY y DESC, q DESC"
+        );
+        $curY = (int) date('Y');
+        $curQ = (int) ceil(((int) date('n')) / 3);
+        $seen = [];
+        $out = [];
+        foreach ($rows as $r) {
+            $y = (int) $r['y']; $q = (int) $r['q'];
+            $key = $y . 'Q' . $q;
+            if (isset($seen[$key])) continue;
+            $seen[$key] = true;
+            $out[] = [
+                'key' => $key, 'year' => $y, 'quarter' => $q,
+                'label' => 'Q' . $q . ' ' . $y,
+                'is_current' => ($y === $curY && $q === $curQ),
+            ];
+        }
+        $curKey = $curY . 'Q' . $curQ;
+        if (!isset($seen[$curKey])) {
+            array_unshift($out, [
+                'key' => $curKey, 'year' => $curY, 'quarter' => $curQ,
+                'label' => 'Q' . $curQ . ' ' . $curY, 'is_current' => true,
+            ]);
+        }
+        return $out;
+    }
+
+    /** Parse 'YYYYQN' (bv. '2025Q3'). Levert null bij ongeldige input. */
+    public static function parseSeasonKey(string $key): ?array
+    {
+        if (!preg_match('/^(\d{4})Q([1-4])$/', $key, $m)) return null;
+        return ['year' => (int) $m[1], 'quarter' => (int) $m[2]];
+    }
+
+    /**
      * Player standings: sum of points_awarded over completed matches in window.
      * If $gameId is given and that game uses Elo, returns current ratings.
      */
-    public static function players(string $period, ?int $gameId = null, int $limit = 100, string $scoring = 'auto'): array
+    public static function players(string $period, ?int $gameId = null, int $limit = 100, string $scoring = 'auto', ?string $since = null, ?string $until = null): array
     {
-        $since = self::since($period);
+        if ($since === null && $until === null) {
+            $since = self::since($period);
+        }
 
         if ($gameId !== null && $scoring !== 'wins') {
             $game = Game::find($gameId);
-            if ($game && $game['score_type'] === 'elo' && $period === 'lifetime') {
+            if ($game && $game['score_type'] === 'elo' && $period === 'lifetime' && $since === null && $until === null) {
                 return Database::fetchAll(
                     'SELECT u.id, u.display_name, u.avatar_path,
                             r.rating  AS total_points,
@@ -100,6 +164,10 @@ class Leaderboard
         if ($since !== null) {
             $where .= ' AND m.ended_at >= ?';
             $params[] = $since;
+        }
+        if ($until !== null) {
+            $where .= ' AND m.ended_at <= ?';
+            $params[] = $until;
         }
         if ($gameId !== null) {
             $where .= ' AND m.game_id = ?';
@@ -132,15 +200,21 @@ class Leaderboard
     /**
      * Team standings (analogous, for matches with team_id set).
      */
-    public static function teams(string $period, ?int $gameId = null, int $limit = 100): array
+    public static function teams(string $period, ?int $gameId = null, int $limit = 100, ?string $since = null, ?string $until = null): array
     {
-        $since = self::since($period);
+        if ($since === null && $until === null) {
+            $since = self::since($period);
+        }
 
         $where = 'm.state = "completed" AND p.team_id IS NOT NULL';
         $params = [];
         if ($since !== null) {
             $where .= ' AND m.ended_at >= ?';
             $params[] = $since;
+        }
+        if ($until !== null) {
+            $where .= ' AND m.ended_at <= ?';
+            $params[] = $until;
         }
         if ($gameId !== null) {
             $where .= ' AND m.game_id = ?';

@@ -5,6 +5,9 @@
 /** @var array $games */
 /** @var array $players */
 /** @var array $teams */
+/** @var array $seasons */
+/** @var ?string $seasonKey */
+/** @var ?string $seasonLabel */
 use GamesPool\Models\Leaderboard;
 
 $title = 'Leaderboard';
@@ -18,23 +21,54 @@ $inputCls = 'rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:
     <p class="text-slate-500 dark:text-slate-400 text-sm">Wie staat er aan kop?</p>
 </div>
 
-<!-- Seizoen-balk: telt af tot eind van het kwartaal -->
-<div class="rounded-2xl bg-navy text-white px-4 py-3 mb-3 shadow-card flex items-center gap-3">
-    <span class="text-2xl">🏆</span>
-    <div class="flex-1 min-w-0">
-        <p class="text-[10px] uppercase tracking-widest text-white/60 font-bold">Seizoen <?= e(Leaderboard::currentSeasonLabel()) ?></p>
-        <p class="text-sm font-semibold">
-            <?= Leaderboard::seasonDaysLeft() ?> dagen tot reset
-        </p>
+<!-- Seizoen-balk: telt af tot eind van het kwartaal + dropdown om terug te kijken -->
+<div class="rounded-2xl bg-navy text-white px-4 py-3 mb-3 shadow-card">
+    <div class="flex items-center gap-3">
+        <span class="text-2xl">🏆</span>
+        <div class="flex-1 min-w-0">
+            <p class="text-[10px] uppercase tracking-widest text-white/60 font-bold">
+                <?= $seasonLabel ? 'Seizoen ' . e($seasonLabel) . ' (archief)' : 'Seizoen ' . e(Leaderboard::currentSeasonLabel()) ?>
+            </p>
+            <p class="text-sm font-semibold">
+                <?= $seasonLabel ? 'Historisch overzicht' : Leaderboard::seasonDaysLeft() . ' dagen tot reset' ?>
+            </p>
+        </div>
+        <?php if (!$seasonLabel): ?>
+            <a href="<?= e(url('/leaderboard?period=season')) ?>"
+               class="text-xs font-semibold bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-md shrink-0">
+                Bekijk
+            </a>
+        <?php else: ?>
+            <a href="<?= e(url('/leaderboard')) ?>"
+               class="text-xs font-semibold bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-md shrink-0">
+                ← Nu
+            </a>
+        <?php endif; ?>
     </div>
-    <a href="<?= e(url('/leaderboard?period=season')) ?>"
-       class="text-xs font-semibold bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-md">
-        Bekijk
-    </a>
+    <?php if (!empty($seasons) && count($seasons) > 1): ?>
+        <form method="get" action="<?= e(url('/leaderboard')) ?>" class="mt-3">
+            <?php if (!empty($game['slug'])): ?>
+                <input type="hidden" name="game" value="<?= e($game['slug']) ?>">
+            <?php endif; ?>
+            <label class="block text-[10px] uppercase tracking-widest text-white/60 font-bold mb-1">Bekijk seizoen</label>
+            <select name="season" onchange="this.form.submit()"
+                    class="w-full rounded-md bg-white/10 border border-white/20 text-white text-sm px-2 py-1.5">
+                <option value="">Huidig seizoen</option>
+                <?php foreach ($seasons as $s): ?>
+                    <option value="<?= e($s['key']) ?>" <?= $seasonKey === $s['key'] ? 'selected' : '' ?>>
+                        <?= e($s['label']) ?><?= $s['is_current'] ? ' · nu' : '' ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </form>
+    <?php endif; ?>
 </div>
 
 <form method="get" action="<?= e(url('/leaderboard')) ?>" class="grid grid-cols-2 gap-2 mb-4">
-    <select name="period" onchange="this.form.submit()" class="<?= $inputCls ?>">
+    <?php if ($seasonKey): ?>
+        <input type="hidden" name="season" value="<?= e($seasonKey) ?>">
+    <?php endif; ?>
+    <select name="period" onchange="this.form.submit()" class="<?= $inputCls ?>" <?= $seasonKey ? 'disabled' : '' ?>>
         <?php foreach (Leaderboard::PERIODS as $p): ?>
             <option value="<?= e($p) ?>" <?= $p === $period ? 'selected' : '' ?>>
                 <?= e(Leaderboard::periodLabel($p)) ?>
@@ -42,7 +76,7 @@ $inputCls = 'rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:
         <?php endforeach; ?>
     </select>
     <select name="game" onchange="this.form.submit()" class="<?= $inputCls ?>">
-        <option value="">Alle spellen</option>
+        <option value="all">Alle spellen</option>
         <?php foreach ($games as $g): ?>
             <option value="<?= e($g['slug']) ?>" <?= ($game['slug'] ?? '') === $g['slug'] ? 'selected' : '' ?>>
                 <?= e($g['name']) ?>
