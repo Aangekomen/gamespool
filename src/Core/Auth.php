@@ -57,7 +57,9 @@ class Auth
             return null;
         }
         $cache = Database::fetch(
-            'SELECT id, email, display_name, avatar_path, is_admin, created_at FROM users WHERE id = ?',
+            'SELECT id, email, first_name, last_name, display_name, avatar_path, is_admin,
+                    email_verified_at, created_at
+               FROM users WHERE id = ?',
             [$id]
         );
         return $cache;

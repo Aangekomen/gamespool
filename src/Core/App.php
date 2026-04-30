@@ -53,6 +53,8 @@ class App
         $r->get('/login',     [AuthController::class, 'showLogin']);
         $r->post('/login',    [AuthController::class, 'login']);
         $r->post('/logout',   [AuthController::class, 'logout']);
+        $r->get('/verify/{token}',     [AuthController::class, 'verify']);
+        $r->post('/verify/resend',     [AuthController::class, 'resendVerification']);
 
         // Games
         $r->get('/games',                 [GameController::class, 'index']);

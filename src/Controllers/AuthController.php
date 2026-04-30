@@ -5,6 +5,7 @@ namespace GamesPool\Controllers;
 
 use GamesPool\Core\Auth;
 use GamesPool\Core\Database;
+use GamesPool\Core\Mailer;
 use GamesPool\Core\Session;
 use GamesPool\Core\Validator;
 use GamesPool\Models\Company;
@@ -62,10 +63,11 @@ class AuthController
         $isAdmin   = $userCount === 0 ? 1 : 0;
 
         $displayName = trim($data['first_name'] . ' ' . $data['last_name']);
+        $token = bin2hex(random_bytes(32));
 
         $id = Database::insert(
-            'INSERT INTO users (email, first_name, last_name, company_id, display_name, password_hash, is_admin)
-             VALUES (?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO users (email, first_name, last_name, company_id, display_name, password_hash, is_admin, verification_token)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 $data['email'],
                 $data['first_name'],
@@ -74,10 +76,70 @@ class AuthController
                 $displayName,
                 password_hash($data['password'], PASSWORD_DEFAULT),
                 $isAdmin,
+                $token,
             ]
         );
+
+        $this->sendVerificationMail((int) $id, $data['email'], $data['first_name'], $token);
+
         Auth::login($id);
+        Session::flash('_flash.success', 'Welkom! We hebben een bevestigingsmail naar ' . $data['email'] . ' gestuurd.');
         redirect('/');
+    }
+
+    public function verify(string $token): void
+    {
+        $token = preg_replace('/[^a-f0-9]/', '', $token) ?? '';
+        if (strlen($token) < 32) {
+            Session::flash('_flash.error', 'Ongeldige verificatielink.');
+            redirect('/');
+        }
+        $user = Database::fetch('SELECT id, email_verified_at FROM users WHERE verification_token = ?', [$token]);
+        if (!$user) {
+            Session::flash('_flash.error', 'Verificatielink is ongeldig of al gebruikt.');
+            redirect('/');
+        }
+        if ($user['email_verified_at'] !== null) {
+            Session::flash('_flash.success', 'E-mailadres was al bevestigd.');
+            redirect('/');
+        }
+        Database::query(
+            'UPDATE users SET email_verified_at = NOW(), verification_token = NULL WHERE id = ?',
+            [$user['id']]
+        );
+        Session::flash('_flash.success', 'E-mailadres bevestigd. Bedankt!');
+        redirect('/');
+    }
+
+    public function resendVerification(): void
+    {
+        Auth::requireLogin();
+        $u = Auth::user();
+        if (!$u) redirect('/');
+        if (!empty($u['email_verified_at'])) {
+            Session::flash('_flash.success', 'Je e-mailadres is al bevestigd.');
+            redirect('/');
+        }
+        $token = bin2hex(random_bytes(32));
+        Database::query(
+            'UPDATE users SET verification_token = ? WHERE id = ?',
+            [$token, $u['id']]
+        );
+        $this->sendVerificationMail((int) $u['id'], (string) $u['email'], (string) ($u['first_name'] ?? ''), $token);
+        Session::flash('_flash.success', 'Bevestigingsmail opnieuw verzonden.');
+        redirect('/');
+    }
+
+    private function sendVerificationMail(int $userId, string $email, string $firstName, string $token): void
+    {
+        $appName = (string) (function_exists('config') ? config('app.name') : 'FlexiComp');
+        $verifyUrl = url('/verify/' . $token);
+        $body = "Hallo " . trim($firstName) . ",\n\n"
+              . "Bevestig je e-mailadres voor {$appName} via deze link:\n"
+              . $verifyUrl . "\n\n"
+              . "Heb je geen account aangemaakt? Negeer dan deze mail.\n\n"
+              . "— {$appName}";
+        Mailer::send($email, "Bevestig je e-mail voor {$appName}", $body);
     }
 
     public function showLogin(): string

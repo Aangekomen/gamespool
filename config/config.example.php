@@ -20,6 +20,12 @@ return [
         'password' => 'CHANGE_ME',
         'charset'  => 'utf8mb4',
     ],
+    'mail' => [
+        // Sender shown in the From-header. Use a real address on your domain
+        // so SPF/DKIM are aligned. Default is "noreply@<domain-of-app.url>".
+        'from_email' => '',     // bv. 'noreply@poolgames.unsolve.io'
+        'from_name'  => 'FlexiComp',
+    ],
     'uploads' => [
         // Sub-folders below public/uploads/
         'avatars_dir' => 'avatars',

@@ -110,6 +110,15 @@ $icon = function (string $name): string {
 
     <main class="flex-1 pb-24">
         <div class="max-w-3xl mx-auto px-4 py-6 sm:py-8">
+            <?php if (user() && empty(user()['email_verified_at'])): ?>
+                <div class="mb-4 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 px-4 py-3 text-amber-900 dark:text-amber-200 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <span>Bevestig je e-mailadres — we hebben je een mail gestuurd.</span>
+                    <form method="post" action="<?= e(url('/verify/resend')) ?>" class="shrink-0">
+                        <?= csrf_field() ?>
+                        <button class="text-xs font-semibold underline hover:no-underline">Opnieuw versturen</button>
+                    </form>
+                </div>
+            <?php endif; ?>
             <?php if ($msg = flash('success')): ?>
                 <div data-flash class="mb-4 rounded-md bg-brand-light border border-brand/30 px-4 py-3 text-brand-dark text-sm font-medium transition-opacity duration-500"><?= e((string) $msg) ?></div>
             <?php endif; ?>
