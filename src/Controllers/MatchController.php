@@ -380,6 +380,14 @@ class MatchController
     public function matchStream(string $token): void
     {
         Auth::requireLogin();
+
+        // CRITICAL: sessie loslaten vóór de lange loop. PHP file-sessions
+        // locken per gebruiker, dus zonder dit blijft elke andere request
+        // van dezelfde user 30+ seconden hangen achter onze SSE → 504.
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
         $match = GameMatch::findByToken($token);
         if (!$match) { http_response_code(404); return; }
 
@@ -392,8 +400,11 @@ class MatchController
         header('X-Accel-Buffering: no');
         header('Connection: keep-alive');
 
+        // Vermijd execution-limit fatal errors — we stoppen zelf netjes.
+        @set_time_limit(45);
+
         $matchId = (int) $match['id'];
-        $endsAt = time() + 120;
+        $endsAt = time() + 30; // korte sessions; client reconnect automatisch
         $lastFingerprint = '';
 
         while (time() < $endsAt) {
@@ -418,7 +429,7 @@ class MatchController
 
             // Stop streaming als de match afgelopen is — client navigeert wel.
             if (in_array($current['state'], ['completed','cancelled'], true)) break;
-            sleep(2);
+            sleep(3);
         }
     }
 
