@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace GamesPool\Controllers;
 
+use GamesPool\Core\Admin;
 use GamesPool\Core\Auth;
 use GamesPool\Core\Database;
 use GamesPool\Core\Session;
@@ -21,7 +22,7 @@ class GameController
 
     public function create(): string
     {
-        Auth::requireLogin();
+        Admin::require();
         return view('games/form', [
             'game'   => null,
             'errors' => Session::pull('_errors', []),
@@ -30,7 +31,7 @@ class GameController
 
     public function store(): void
     {
-        Auth::requireLogin();
+        Admin::require();
         $data = $this->payload();
 
         $v = (new Validator($data))
@@ -55,7 +56,7 @@ class GameController
 
     public function edit(string $slug): string
     {
-        Auth::requireLogin();
+        Admin::require();
         $game = Game::findBySlug($slug) ?? $this->notFound();
         $this->authorize($game);
         return view('games/form', [
@@ -66,7 +67,7 @@ class GameController
 
     public function update(string $slug): void
     {
-        Auth::requireLogin();
+        Admin::require();
         $game = Game::findBySlug($slug) ?? $this->notFound();
         $this->authorize($game);
         $data = $this->payload();
@@ -93,7 +94,7 @@ class GameController
 
     public function destroy(string $slug): void
     {
-        Auth::requireLogin();
+        Admin::require();
         $game = Game::findBySlug($slug) ?? $this->notFound();
         $this->authorize($game);
         Game::delete((int) $game['id']);

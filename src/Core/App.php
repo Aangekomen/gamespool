@@ -3,11 +3,13 @@ declare(strict_types=1);
 
 namespace GamesPool\Core;
 
+use GamesPool\Controllers\AdminController;
 use GamesPool\Controllers\AuthController;
 use GamesPool\Controllers\GameController;
 use GamesPool\Controllers\HomeController;
 use GamesPool\Controllers\LeaderboardController;
 use GamesPool\Controllers\MatchController;
+use GamesPool\Controllers\QrController;
 use GamesPool\Controllers\TeamController;
 
 class App
@@ -76,6 +78,23 @@ class App
         $r->post('/teams',                [TeamController::class, 'create']);
         $r->post('/teams/join',           [TeamController::class, 'join']);
         $r->post('/teams/{id}/leave',     [TeamController::class, 'leave']);
+
+        // QR / device match flow
+        $r->get('/d/{code}',              [MatchController::class, 'scanDevice']);
+        $r->get('/m/{token}',             [MatchController::class, 'lobby']);
+        $r->post('/m/{token}/accept',     [MatchController::class, 'acceptLobby']);
+        $r->get('/qr.svg',                [QrController::class,    'svg']);
+
+        // Admin
+        $r->get('/admin',                                 [AdminController::class, 'index']);
+        $r->get('/admin/devices',                         [AdminController::class, 'devicesIndex']);
+        $r->get('/admin/devices/new',                     [AdminController::class, 'devicesNew']);
+        $r->post('/admin/devices',                        [AdminController::class, 'devicesStore']);
+        $r->get('/admin/devices/{id}',                    [AdminController::class, 'devicesShow']);
+        $r->get('/admin/devices/{id}/edit',               [AdminController::class, 'devicesEdit']);
+        $r->patch('/admin/devices/{id}',                  [AdminController::class, 'devicesUpdate']);
+        $r->delete('/admin/devices/{id}',                 [AdminController::class, 'devicesDestroy']);
+        $r->get('/admin/devices/{id}/print',              [AdminController::class, 'devicesPrint']);
     }
 
     public function run(): void

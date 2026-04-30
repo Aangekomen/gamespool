@@ -78,6 +78,9 @@ $icon = function (string $name): string {
                     <a href="<?= e(url('/leaderboard')) ?>" class="hidden md:inline-block px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Ranglijst</a>
                     <a href="<?= e(url('/matches')) ?>" class="hidden md:inline-block px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Matches</a>
                     <a href="<?= e(url('/teams')) ?>" class="hidden md:inline-block px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Teams</a>
+                    <?php if (\GamesPool\Core\Admin::is()): ?>
+                        <a href="<?= e(url('/admin')) ?>" class="px-3 py-1.5 rounded-md text-brand-dark bg-brand-light hover:bg-brand/20 font-medium">Admin</a>
+                    <?php endif; ?>
                     <form method="post" action="<?= e(url('/logout')) ?>">
                         <?= csrf_field() ?>
                         <button class="px-3 py-1.5 rounded-md text-slate-500 hover:text-navy hover:bg-slate-100">Uitloggen</button>

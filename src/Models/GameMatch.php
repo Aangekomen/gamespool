@@ -147,8 +147,71 @@ class GameMatch
     public static function cancel(int $matchId): void
     {
         Database::query(
-            'UPDATE matches SET state = "cancelled", ended_at = NOW() WHERE id = ? AND state = "in_progress"',
+            'UPDATE matches SET state = "cancelled", ended_at = NOW() WHERE id = ? AND state IN ("in_progress","waiting")',
             [$matchId]
         );
+    }
+
+    /**
+     * Create a "waiting" match started from a device QR scan, with the
+     * scanning user as sole confirmed participant.
+     */
+    public static function createWaiting(array $device, int $userId): int
+    {
+        $token = bin2hex(random_bytes(8));
+        $matchId = Database::insert(
+            'INSERT INTO matches (game_id, device_id, label, state, join_token, created_by)
+             VALUES (?, ?, ?, "waiting", ?, ?)',
+            [$device['game_id'], $device['id'], $device['name'], $token, $userId]
+        );
+        Database::query(
+            'INSERT INTO match_participants (match_id, user_id) VALUES (?, ?)',
+            [$matchId, $userId]
+        );
+        return $matchId;
+    }
+
+    /**
+     * Find the most-recent waiting match for a given device, if any.
+     */
+    public static function waitingForDevice(int $deviceId): ?array
+    {
+        return Database::fetch(
+            'SELECT * FROM matches
+              WHERE device_id = ? AND state = "waiting"
+              ORDER BY id DESC
+              LIMIT 1',
+            [$deviceId]
+        );
+    }
+
+    /**
+     * Add a 2nd participant and lock the match (waiting → in_progress).
+     * Returns true if accepted, false if user was already in the match.
+     */
+    public static function acceptInvite(int $matchId, int $userId): bool
+    {
+        $existing = Database::fetch(
+            'SELECT id FROM match_participants WHERE match_id = ? AND user_id = ? LIMIT 1',
+            [$matchId, $userId]
+        );
+        if ($existing) return false;
+
+        Database::pdo()->beginTransaction();
+        try {
+            Database::query(
+                'INSERT INTO match_participants (match_id, user_id) VALUES (?, ?)',
+                [$matchId, $userId]
+            );
+            Database::query(
+                'UPDATE matches SET state = "in_progress" WHERE id = ? AND state = "waiting"',
+                [$matchId]
+            );
+            Database::pdo()->commit();
+            return true;
+        } catch (\Throwable $e) {
+            if (Database::pdo()->inTransaction()) Database::pdo()->rollBack();
+            throw $e;
+        }
     }
 }

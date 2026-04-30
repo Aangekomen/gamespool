@@ -6,6 +6,7 @@ namespace GamesPool\Controllers;
 use GamesPool\Core\Auth;
 use GamesPool\Core\Database;
 use GamesPool\Core\Session;
+use GamesPool\Models\Device;
 use GamesPool\Models\Game;
 use GamesPool\Models\GameMatch;
 
@@ -203,6 +204,85 @@ class MatchController
         GameMatch::cancel((int) $match['id']);
         Session::flash('_flash.success', 'Match geannuleerd.');
         redirect('/matches');
+    }
+
+    /**
+     * /d/<code> — landing after scanning a printed device QR code.
+     * If a waiting match for this device already exists → join lobby.
+     * Otherwise → create a fresh waiting match with current user as host.
+     */
+    public function scanDevice(string $code): void
+    {
+        Auth::requireLogin();
+        $device = Device::findByCode($code);
+        if (!$device) {
+            http_response_code(404);
+            echo view('errors/404');
+            exit;
+        }
+
+        $waiting = GameMatch::waitingForDevice((int) $device['id']);
+        if ($waiting) {
+            redirect('/m/' . $waiting['join_token']);
+        }
+
+        $matchId = GameMatch::createWaiting($device, (int) Auth::id());
+        $match = GameMatch::find($matchId);
+        redirect('/m/' . $match['join_token']);
+    }
+
+    /**
+     * /m/<token> — match lobby + share screen.
+     */
+    public function lobby(string $token): string
+    {
+        Auth::requireLogin();
+        $match = GameMatch::findByToken($token);
+        if (!$match) $this->notFound();
+
+        if ($match['state'] === 'in_progress' || $match['state'] === 'completed') {
+            redirect('/matches/' . $match['id']);
+        }
+
+        $game   = Game::find((int) $match['game_id']);
+        $device = $match['device_id'] ? Device::find((int) $match['device_id']) : null;
+        $parts  = GameMatch::participants((int) $match['id']);
+        $userId = (int) Auth::id();
+        $isHost        = (int) $match['created_by'] === $userId;
+        $isParticipant = false;
+        foreach ($parts as $p) {
+            if ((int) ($p['user_id'] ?? 0) === $userId) { $isParticipant = true; break; }
+        }
+
+        return view('matches/lobby', [
+            'match'         => $match,
+            'game'          => $game,
+            'device'        => $device,
+            'participants'  => $parts,
+            'isHost'        => $isHost,
+            'isParticipant' => $isParticipant,
+            'shareUrl'      => url('/m/' . $match['join_token']),
+        ]);
+    }
+
+    /**
+     * POST /m/<token>/accept — current user accepts the invite, match becomes in_progress.
+     */
+    public function acceptLobby(string $token): void
+    {
+        Auth::requireLogin();
+        $match = GameMatch::findByToken($token) ?? $this->notFound();
+        if ($match['state'] !== 'waiting') {
+            redirect('/matches/' . $match['id']);
+        }
+        try {
+            GameMatch::acceptInvite((int) $match['id'], (int) Auth::id());
+        } catch (\Throwable $e) {
+            Session::flash('_flash.error', 'Aansluiten mislukt: ' . $e->getMessage());
+            redirect('/m/' . $token);
+        }
+        Session::flash('_flash.success', 'Match gestart!');
+        redirect('/matches/' . $match['id']);
     }
 
     private function notFound(): never

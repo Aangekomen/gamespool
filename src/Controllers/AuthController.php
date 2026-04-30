@@ -45,9 +45,13 @@ class AuthController
             redirect('/register');
         }
 
+        // First registered user becomes admin automatically
+        $userCount = (int) (Database::fetch('SELECT COUNT(*) AS c FROM users')['c'] ?? 0);
+        $isAdmin   = $userCount === 0 ? 1 : 0;
+
         $id = Database::insert(
-            'INSERT INTO users (email, display_name, password_hash) VALUES (?, ?, ?)',
-            [$data['email'], $data['display_name'], password_hash($data['password'], PASSWORD_DEFAULT)]
+            'INSERT INTO users (email, display_name, password_hash, is_admin) VALUES (?, ?, ?, ?)',
+            [$data['email'], $data['display_name'], password_hash($data['password'], PASSWORD_DEFAULT), $isAdmin]
         );
         Auth::login($id);
         redirect('/');
