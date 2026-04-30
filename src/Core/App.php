@@ -74,10 +74,12 @@ class App
         $r->get('/leaderboard', [LeaderboardController::class, 'index']);
 
         // Teams
-        $r->get('/teams',                 [TeamController::class, 'index']);
-        $r->post('/teams',                [TeamController::class, 'create']);
-        $r->post('/teams/join',           [TeamController::class, 'join']);
-        $r->post('/teams/{id}/leave',     [TeamController::class, 'leave']);
+        $r->get('/teams',                                       [TeamController::class, 'index']);
+        $r->post('/teams',                                      [TeamController::class, 'create']);
+        $r->post('/teams/join',                                 [TeamController::class, 'join']);
+        $r->post('/teams/{id}/leave',                           [TeamController::class, 'leave']);
+        $r->post('/teams/{teamId}/members/{userId}/approve',    [TeamController::class, 'approve']);
+        $r->post('/teams/{teamId}/members/{userId}/reject',     [TeamController::class, 'reject']);
 
         // QR / device match flow
         $r->get('/d/{code}',              [MatchController::class, 'scanDevice']);

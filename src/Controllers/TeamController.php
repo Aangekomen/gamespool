@@ -14,9 +14,21 @@ class TeamController
     {
         Auth::requireLogin();
         $userId = (int) Auth::id();
+        $myTeams = Team::forUser($userId);
+
+        // For each captain'd team, also show pending join requests
+        $pendingPerTeam = [];
+        foreach ($myTeams as $t) {
+            if (Team::isCaptain((int) $t['id'], $userId)) {
+                $pendingPerTeam[(int) $t['id']] = Team::pendingRequests((int) $t['id']);
+            }
+        }
+
         return view('teams/index', [
-            'teams'  => Team::forUser($userId),
-            'errors' => Session::pull('_errors', []),
+            'teams'          => $myTeams,
+            'pendingMine'    => Team::pendingForUser($userId),
+            'pendingPerTeam' => $pendingPerTeam,
+            'errors'         => Session::pull('_errors', []),
         ]);
     }
 
@@ -56,13 +68,39 @@ class TeamController
         }
 
         $userId = (int) Auth::id();
-        if (Team::isMember((int) $team['id'], $userId)) {
-            Session::flash('_flash.success', 'Je zit al in team ' . $team['name'] . '.');
-            redirect('/teams');
-        }
+        $status = Team::requestJoin((int) $team['id'], $userId);
 
-        Team::addMember((int) $team['id'], $userId);
-        Session::flash('_flash.success', 'Je bent toegevoegd aan team ' . $team['name'] . '.');
+        Session::flash('_flash.success', match ($status) {
+            'approved' => 'Je zit in team ' . $team['name'] . '.',
+            'pending'  => 'Verzoek verstuurd. De captain van ' . $team['name'] . ' moet je nog goedkeuren.',
+            default    => 'Verzoek verstuurd.',
+        });
+        redirect('/teams');
+    }
+
+    public function approve(string $teamId, string $userId): void
+    {
+        Auth::requireLogin();
+        $tid = (int) $teamId;
+        $uid = (int) $userId;
+        if (!Team::isCaptain($tid, (int) Auth::id())) {
+            http_response_code(403); echo 'Alleen de captain kan goedkeuren.'; exit;
+        }
+        Team::approveMember($tid, $uid);
+        Session::flash('_flash.success', 'Lid goedgekeurd.');
+        redirect('/teams');
+    }
+
+    public function reject(string $teamId, string $userId): void
+    {
+        Auth::requireLogin();
+        $tid = (int) $teamId;
+        $uid = (int) $userId;
+        if (!Team::isCaptain($tid, (int) Auth::id())) {
+            http_response_code(403); echo 'Alleen de captain kan afwijzen.'; exit;
+        }
+        Team::rejectMember($tid, $uid);
+        Session::flash('_flash.success', 'Verzoek afgewezen.');
         redirect('/teams');
     }
 
