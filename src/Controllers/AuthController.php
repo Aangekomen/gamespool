@@ -218,3 +218,4 @@ class AuthController
         Session::flash('_flash.success', 'Wachtwoord ingesteld. Log in met je nieuwe wachtwoord.');
         redirect('/login');
     }
+}
