@@ -490,7 +490,9 @@ class GameMatch
                 [$matchId, $userId]
             );
             Database::query(
-                'UPDATE matches SET state = "in_progress" WHERE id = ? AND state = "waiting"',
+                // started_at resetten naar NU zodat de speeltijd-timer pas
+                // begint te tellen vanaf het moment dat iedereen er is.
+                'UPDATE matches SET state = "in_progress", started_at = NOW() WHERE id = ? AND state = "waiting"',
                 [$matchId]
             );
             Database::pdo()->commit();
