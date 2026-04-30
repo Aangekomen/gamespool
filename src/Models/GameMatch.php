@@ -399,22 +399,29 @@ class GameMatch
     }
 
     /**
-     * Sluit matches af die te lang in 'waiting' of 'in_progress' staan.
-     * Voorkomt dat tests/abandoned matches eeuwig "bezig" blijven en
-     * een apparaat onbruikbaar maken.
+     * Sluit matches af die te lang in 'waiting' of 'in_progress' staan en
+     * verwijder oude cancelled matches die alleen nog ruis zijn in de lijst.
      *
-     *   waiting     → 30 minuten
-     *   in_progress →  6 uur
+     *   waiting          → 30 minuten → cancelled
+     *   in_progress      →  6 uur     → cancelled
+     *   cancelled        →  2 uur na  ended_at → DELETE (uit historie)
      */
     public static function cancelStale(): int
     {
-        $row = Database::pdo()->exec(
+        $pdo = Database::pdo();
+        $cancelled = $pdo->exec(
             "UPDATE matches
                 SET state = 'cancelled', ended_at = NOW()
               WHERE (state = 'waiting'     AND started_at < (NOW() - INTERVAL 30 MINUTE))
                  OR (state = 'in_progress' AND started_at < (NOW() - INTERVAL 6 HOUR))"
         );
-        return (int) $row;
+        // Geannuleerde matches > 2 uur oud opruimen — geen waarde voor history.
+        $pdo->exec(
+            "DELETE FROM matches
+              WHERE state = 'cancelled'
+                AND COALESCE(ended_at, started_at) < (NOW() - INTERVAL 2 HOUR)"
+        );
+        return (int) $cancelled;
     }
 
     /**
