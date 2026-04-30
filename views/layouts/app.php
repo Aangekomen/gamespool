@@ -74,10 +74,6 @@ $icon = function (string $name): string {
             </a>
             <nav class="flex items-center gap-1 text-sm">
                 <?php if (user()): ?>
-                    <a href="<?= e(url('/games')) ?>" class="hidden md:inline-block px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Spellen</a>
-                    <a href="<?= e(url('/leaderboard')) ?>" class="hidden md:inline-block px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Ranglijst</a>
-                    <a href="<?= e(url('/matches')) ?>" class="hidden md:inline-block px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Matches</a>
-                    <a href="<?= e(url('/teams')) ?>" class="hidden md:inline-block px-3 py-1.5 rounded-md text-slate-600 hover:text-navy hover:bg-slate-100">Teams</a>
                     <?php if (\GamesPool\Core\Admin::is()): ?>
                         <a href="<?= e(url('/admin')) ?>" class="px-3 py-1.5 rounded-md text-brand-dark bg-brand-light hover:bg-brand/20 font-medium">Admin</a>
                     <?php endif; ?>
@@ -93,7 +89,7 @@ $icon = function (string $name): string {
         </div>
     </header>
 
-    <main class="flex-1 pb-24 md:pb-6">
+    <main class="flex-1 pb-24">
         <div class="max-w-3xl mx-auto px-4 py-6 sm:py-8">
             <?php if ($msg = flash('success')): ?>
                 <div class="mb-4 rounded-md bg-brand-light border border-brand/30 px-4 py-3 text-brand-dark text-sm font-medium"><?= e((string) $msg) ?></div>
@@ -106,12 +102,12 @@ $icon = function (string $name): string {
     </main>
 
     <?php if (user()): ?>
-        <!-- Mobile bottom tab bar -->
-        <nav class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 pb-safe">
+        <!-- Always-visible bottom tab bar -->
+        <nav class="fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 pb-safe shadow-[0_-1px_4px_rgba(15,23,42,0.04)]">
             <div class="max-w-3xl mx-auto grid grid-cols-4">
                 <?php foreach ($nav as $key => $item): $active = $isActive($item['match']); ?>
                     <a href="<?= e($item['url']) ?>"
-                       class="flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium <?= $active ? 'text-brand-dark' : 'text-slate-500' ?>">
+                       class="flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition <?= $active ? 'text-brand-dark' : 'text-slate-500 hover:text-navy' ?>">
                         <?= $icon($item['icon']) ?>
                         <span><?= e($item['label']) ?></span>
                     </a>
@@ -119,9 +115,5 @@ $icon = function (string $name): string {
             </div>
         </nav>
     <?php endif; ?>
-
-    <footer class="text-center text-xs text-slate-400 py-6 hidden md:block">
-        FlexiComp · <?= date('Y') ?>
-    </footer>
 </body>
 </html>

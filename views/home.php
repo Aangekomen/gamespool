@@ -47,7 +47,7 @@ $title = 'GamesPool';
         </div>
         <p class="text-white/70 text-sm mt-0.5">Speel een potje. Klim in de ranglijst.</p>
 
-        <div class="grid grid-cols-3 gap-2 mt-5 relative">
+        <div class="grid grid-cols-3 gap-1 sm:gap-3 mt-5 relative">
             <?php
             $cells = [
                 ['label' => 'Vandaag',  'value' => $stats['today_matches'], 'sub' => 'matches',  'color' => '#35b782'],
@@ -60,20 +60,20 @@ $title = 'GamesPool';
                 $circ = 2 * M_PI * 28; // radius 28
                 $offset = $circ - ($circ * $pct / 100);
             ?>
-                <div class="text-center">
-                    <div class="relative w-20 h-20 mx-auto">
-                        <svg viewBox="0 0 64 64" class="w-20 h-20 -rotate-90">
+                <div class="text-center min-w-0">
+                    <div class="relative w-16 h-16 sm:w-20 sm:h-20 mx-auto">
+                        <svg viewBox="0 0 64 64" class="w-full h-full -rotate-90">
                             <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.08)" stroke-width="6" fill="none"></circle>
                             <circle cx="32" cy="32" r="28" stroke="<?= $c['color'] ?>" stroke-width="6" fill="none"
                                     stroke-linecap="round"
                                     stroke-dasharray="<?= $circ ?>" stroke-dashoffset="<?= $offset ?>"></circle>
                         </svg>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <p class="text-lg font-bold leading-none"><?= e((string) $c['value']) ?></p>
+                            <p class="text-base sm:text-lg font-bold leading-none"><?= e((string) $c['value']) ?></p>
                         </div>
                     </div>
-                    <p class="text-[11px] text-white/70 mt-1.5 font-medium"><?= e($c['label']) ?></p>
-                    <p class="text-[10px] text-white/40"><?= e((string) $c['sub']) ?></p>
+                    <p class="text-[11px] text-white/70 mt-1.5 font-medium truncate"><?= e($c['label']) ?></p>
+                    <p class="text-[10px] text-white/40 truncate"><?= e((string) $c['sub']) ?></p>
                 </div>
             <?php endforeach; ?>
         </div>

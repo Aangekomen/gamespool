@@ -30,7 +30,7 @@ $shareText = 'Speel je een potje ' . ($game['name'] ?? '') . ' met me? ' . $shar
         <h2 class="text-sm font-bold text-navy mb-3">Deelnemers</h2>
         <ul class="space-y-2">
             <?php foreach ($participants as $i => $p):
-                $name = $p['display_name'] ?: ($p['guest_name'] ?: 'Onbekend');
+                $name = $p['display_name'] ?? 'Onbekend';
             ?>
                 <li class="flex items-center gap-3 rounded-lg bg-surface px-3 py-2.5">
                     <div class="w-9 h-9 rounded-full bg-brand-light text-brand-dark flex items-center justify-center font-bold shrink-0">
@@ -80,20 +80,21 @@ $shareText = 'Speel je een potje ' . ($game['name'] ?? '') . ' met me? ' . $shar
                    class="w-full rounded-lg bg-surface border border-slate-300 px-3 py-2.5 text-sm font-mono text-navy text-center mb-3"
                    onclick="this.select()">
 
+            <button type="button" id="shareBtn"
+                    class="hidden w-full mb-2 rounded-lg bg-brand text-white font-semibold py-3 hover:bg-brand-dark">
+                Delen via apparaat
+            </button>
             <div class="grid grid-cols-3 gap-2">
-                <button type="button" id="shareBtn" class="hidden rounded-lg bg-brand text-white font-semibold py-2.5 hover:bg-brand-dark">
-                    Delen
-                </button>
                 <a href="https://wa.me/?text=<?= e(urlencode($shareText)) ?>" target="_blank" rel="noopener"
-                   class="rounded-lg bg-[#25D366] text-white font-semibold py-2.5 hover:opacity-90 flex items-center justify-center gap-1 text-sm">
+                   class="min-h-[44px] rounded-lg bg-[#25D366] text-white font-semibold hover:opacity-90 flex items-center justify-center text-sm">
                     WhatsApp
                 </a>
                 <a href="mailto:?subject=<?= e(urlencode('Speel je mee?')) ?>&body=<?= e(urlencode($shareText)) ?>"
-                   class="rounded-lg bg-slate-100 text-navy font-semibold py-2.5 hover:bg-slate-200 text-sm">
+                   class="min-h-[44px] rounded-lg bg-slate-100 text-navy font-semibold hover:bg-slate-200 flex items-center justify-center text-sm">
                     Mail
                 </a>
                 <button type="button" id="copyBtn"
-                        class="rounded-lg bg-slate-100 text-navy font-semibold py-2.5 hover:bg-slate-200 text-sm">
+                        class="min-h-[44px] rounded-lg bg-slate-100 text-navy font-semibold hover:bg-slate-200 text-sm">
                     Kopieer
                 </button>
             </div>

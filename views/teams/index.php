@@ -3,32 +3,34 @@
 /** @var array $teams */
 /** @var array $pendingMine */
 /** @var array $pendingPerTeam */
-/** @var array $errors */
 use GamesPool\Models\Team;
 $title = 'Teams';
-$inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand';
 ?>
 
 <div class="mb-4">
     <h1 class="text-2xl font-bold text-navy">Teams</h1>
-    <p class="text-slate-500 text-sm">Sluit aan met een 6-cijferige code of maak een nieuw team.</p>
+    <p class="text-slate-500 text-sm">Sluit aan bij een bestaand team of begin er zelf een.</p>
 </div>
 
-<!-- Join via code -->
-<div class="rounded-2xl bg-white border border-slate-200 p-5 shadow-card mb-4">
-    <h2 class="text-sm font-bold text-navy mb-3">Aansluiten met code</h2>
-    <form method="post" action="<?= e(url('/teams/join')) ?>" class="flex items-stretch gap-2">
-        <?= csrf_field() ?>
-        <input type="text" name="join_code"
-               inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required
-               placeholder="000000"
-               class="flex-1 rounded-lg bg-white border border-slate-300 px-4 py-3 text-2xl tracking-[0.4em] text-center font-mono font-bold text-navy focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand">
-        <button class="px-5 rounded-lg bg-brand text-white font-semibold hover:bg-brand-dark">Vraag aan</button>
-    </form>
-    <?php foreach (($errors['join_code'] ?? []) as $err): ?>
-        <p class="text-red-600 text-sm mt-2"><?= e($err) ?></p>
-    <?php endforeach; ?>
-    <p class="text-xs text-slate-500 mt-2">De captain van het team moet je toelaten voordat je officieel meedoet.</p>
+<!-- Two big choice cards -->
+<div class="grid sm:grid-cols-2 gap-3 mb-6">
+    <a href="<?= e(url('/teams/join')) ?>"
+       class="block rounded-2xl bg-white border border-slate-200 p-5 shadow-card hover:border-brand transition">
+        <div class="w-10 h-10 rounded-lg bg-brand-light text-brand-dark flex items-center justify-center mb-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 11l2 2-2 2m-7-2h9M5 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3"/></svg>
+        </div>
+        <p class="font-bold text-navy text-base">Word lid van een bestaand team</p>
+        <p class="text-sm text-slate-500 mt-1">Vraag de captain om de 6-cijferige code en vul hem in.</p>
+    </a>
+
+    <a href="<?= e(url('/teams/new')) ?>"
+       class="block rounded-2xl bg-white border border-slate-200 p-5 shadow-card hover:border-brand transition">
+        <div class="w-10 h-10 rounded-lg bg-brand-light text-brand-dark flex items-center justify-center mb-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+        </div>
+        <p class="font-bold text-navy text-base">Maak een nieuw team aan</p>
+        <p class="text-sm text-slate-500 mt-1">Start zelf een team — anderen sluiten aan met jouw code.</p>
+    </a>
 </div>
 
 <!-- Pending requests for ME (waiting on a captain) -->
@@ -45,21 +47,6 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
         </ul>
     </div>
 <?php endif; ?>
-
-<!-- Create new team -->
-<details class="rounded-2xl bg-white border border-slate-200 p-5 shadow-card mb-4">
-    <summary class="text-sm font-bold text-navy cursor-pointer select-none">+ Nieuw team aanmaken</summary>
-    <form method="post" action="<?= e(url('/teams')) ?>" class="mt-3 flex items-stretch gap-2">
-        <?= csrf_field() ?>
-        <input type="text" name="name" required minlength="2" maxlength="100"
-               placeholder="Teamnaam"
-               class="<?= $inputCls ?>">
-        <button class="px-5 rounded-lg bg-navy text-white font-semibold hover:bg-navy-soft">Maak</button>
-    </form>
-    <?php foreach (($errors['name'] ?? []) as $err): ?>
-        <p class="text-red-600 text-sm mt-2"><?= e($err) ?></p>
-    <?php endforeach; ?>
-</details>
 
 <!-- My teams -->
 <div>
@@ -98,7 +85,7 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
                         <form method="post" action="<?= e(url('/teams/' . (int) $t['id'] . '/leave')) ?>"
                               onsubmit="return confirm('Team <?= e($t['name']) ?> verlaten?');">
                             <?= csrf_field() ?>
-                            <button class="text-xs px-3 py-1.5 rounded-md bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-500">Verlaat</button>
+                            <button class="min-h-[36px] text-xs px-3 rounded-md bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-500">Verlaat</button>
                         </form>
                     </div>
 
@@ -116,11 +103,11 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
                                         <p class="flex-1 text-sm text-amber-900 truncate font-medium"><?= e($req['display_name']) ?></p>
                                         <form method="post" action="<?= e(url('/teams/' . (int) $t['id'] . '/members/' . (int) $req['user_id'] . '/approve')) ?>" class="contents">
                                             <?= csrf_field() ?>
-                                            <button class="text-xs px-3 py-1 rounded-md bg-brand text-white font-semibold hover:bg-brand-dark">Toelaten</button>
+                                            <button class="min-h-[32px] text-xs px-3 rounded-md bg-brand text-white font-semibold hover:bg-brand-dark">Toelaten</button>
                                         </form>
                                         <form method="post" action="<?= e(url('/teams/' . (int) $t['id'] . '/members/' . (int) $req['user_id'] . '/reject')) ?>" class="contents">
                                             <?= csrf_field() ?>
-                                            <button class="text-xs px-3 py-1 rounded-md bg-white border border-amber-300 text-amber-900 hover:bg-amber-100">×</button>
+                                            <button class="min-h-[32px] text-xs px-3 rounded-md bg-white border border-amber-300 text-amber-900 hover:bg-amber-100" aria-label="Afwijzen">×</button>
                                         </form>
                                     </li>
                                 <?php endforeach; ?>

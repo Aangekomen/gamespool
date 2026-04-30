@@ -22,14 +22,11 @@ $type  = $game['score_type'];
         <?php if ($type === 'points_per_match'): ?>
             <p class="text-sm text-slate-600 mb-1">Vul per speler de score in.</p>
             <?php foreach ($participants as $p):
-                $name = $p['display_name'] ?: ($p['guest_name'] ?: 'Onbekend');
+                $name = $p['display_name'] ?? 'Onbekend';
             ?>
                 <div class="rounded-xl border border-slate-200 bg-surface p-3 flex items-center gap-3">
                     <div class="flex-1 min-w-0">
                         <p class="font-semibold text-navy truncate"><?= e($name) ?></p>
-                        <?php if (!$p['user_id']): ?>
-                            <p class="text-xs text-slate-500">gast</p>
-                        <?php endif; ?>
                     </div>
                     <input type="number" name="p[<?= e((string) $p['id']) ?>][raw_score]"
                            value="<?= e((string) ($p['raw_score'] ?? '')) ?>" min="0" step="1" required
@@ -45,7 +42,7 @@ $type  = $game['score_type'];
             <p class="text-sm text-slate-600 mb-1">Tik op de winnaar.</p>
 
             <?php foreach ($participants as $p):
-                $name = $p['display_name'] ?: ($p['guest_name'] ?: 'Onbekend');
+                $name = $p['display_name'] ?? 'Onbekend';
             ?>
                 <button type="button" data-pick="<?= e((string) $p['id']) ?>"
                         class="pick-btn w-full text-left rounded-xl border-2 border-slate-200 bg-white p-3 flex items-center gap-3 transition
@@ -55,9 +52,6 @@ $type  = $game['score_type'];
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="font-semibold text-navy truncate"><?= e($name) ?></p>
-                        <?php if (!$p['user_id']): ?>
-                            <p class="text-xs text-slate-500">gast</p>
-                        <?php endif; ?>
                     </div>
                     <span class="pick-badge hidden text-xs font-semibold px-2 py-1 rounded-full bg-brand text-white">Winnaar</span>
                 </button>

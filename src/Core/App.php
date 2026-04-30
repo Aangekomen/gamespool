@@ -75,8 +75,10 @@ class App
 
         // Teams
         $r->get('/teams',                                       [TeamController::class, 'index']);
-        $r->post('/teams',                                      [TeamController::class, 'create']);
+        $r->get('/teams/join',                                  [TeamController::class, 'showJoin']);
         $r->post('/teams/join',                                 [TeamController::class, 'join']);
+        $r->get('/teams/new',                                   [TeamController::class, 'showCreate']);
+        $r->post('/teams',                                      [TeamController::class, 'create']);
         $r->post('/teams/{id}/leave',                           [TeamController::class, 'leave']);
         $r->post('/teams/{teamId}/members/{userId}/approve',    [TeamController::class, 'approve']);
         $r->post('/teams/{teamId}/members/{userId}/reject',     [TeamController::class, 'reject']);

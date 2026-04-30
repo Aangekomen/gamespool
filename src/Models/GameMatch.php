@@ -51,7 +51,7 @@ class GameMatch
         return Database::fetchAll(
             'SELECT p.*, u.display_name, u.avatar_path
                FROM match_participants p
-               LEFT JOIN users u ON u.id = p.user_id
+               JOIN users u ON u.id = p.user_id
               WHERE p.match_id = ?
               ORDER BY p.points_awarded DESC, p.id ASC',
             [$matchId]
@@ -60,6 +60,7 @@ class GameMatch
 
     /**
      * Create a new match record (in_progress) with participants but no scores yet.
+     * Every participant must have a user_id — guest play is not supported.
      */
     public static function create(int $gameId, ?int $createdBy, array $participants, ?string $label = null): int
     {
@@ -70,13 +71,13 @@ class GameMatch
         );
 
         foreach ($participants as $p) {
+            if (empty($p['user_id'])) continue;
             Database::query(
-                'INSERT INTO match_participants (match_id, user_id, guest_name, team_id) VALUES (?, ?, ?, ?)',
+                'INSERT INTO match_participants (match_id, user_id, team_id) VALUES (?, ?, ?)',
                 [
                     $matchId,
-                    !empty($p['user_id'])    ? (int) $p['user_id']    : null,
-                    !empty($p['guest_name']) ? (string) $p['guest_name'] : null,
-                    !empty($p['team_id'])    ? (int) $p['team_id']    : null,
+                    (int) $p['user_id'],
+                    !empty($p['team_id']) ? (int) $p['team_id'] : null,
                 ]
             );
         }
@@ -105,9 +106,8 @@ class GameMatch
             $base = $byId[$id] ?? [];
             $merged[] = array_merge($base, [
                 'id'         => $id,
-                'user_id'    => $base['user_id']   ?? null,
-                'guest_name' => $base['guest_name']?? null,
-                'team_id'    => $base['team_id']   ?? null,
+                'user_id'    => $base['user_id'] ?? null,
+                'team_id'    => $base['team_id'] ?? null,
                 'raw_score'  => isset($row['raw_score']) ? (int) $row['raw_score'] : null,
                 'result'     => $row['result'] ?? null,
             ]);

@@ -26,7 +26,7 @@ $type  = $game['score_type'] ?? 'win_loss';
 
     <ul class="space-y-2">
         <?php foreach ($participants as $p):
-            $name = $p['display_name'] ?: ($p['guest_name'] ?: 'Onbekend');
+            $name = $p['display_name'] ?? 'Onbekend';
             $isWinner = ($p['result'] ?? null) === 'win';
         ?>
             <li class="rounded-xl border <?= $isWinner ? 'border-brand bg-brand-light' : 'border-slate-200 bg-white' ?> p-3 flex items-center gap-3 shadow-card">

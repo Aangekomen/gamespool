@@ -28,7 +28,22 @@ class TeamController
             'teams'          => $myTeams,
             'pendingMine'    => Team::pendingForUser($userId),
             'pendingPerTeam' => $pendingPerTeam,
-            'errors'         => Session::pull('_errors', []),
+        ]);
+    }
+
+    public function showJoin(): string
+    {
+        Auth::requireLogin();
+        return view('teams/join', [
+            'errors' => Session::pull('_errors', []),
+        ]);
+    }
+
+    public function showCreate(): string
+    {
+        Auth::requireLogin();
+        return view('teams/new', [
+            'errors' => Session::pull('_errors', []),
         ]);
     }
 
@@ -42,7 +57,8 @@ class TeamController
 
         if ($v->fails()) {
             Session::flash('_errors', $v->errors());
-            redirect('/teams');
+            Session::flash('_old', ['name' => $name]);
+            redirect('/teams/new');
         }
 
         $teamId = Team::create($name, (int) Auth::id());
@@ -58,13 +74,13 @@ class TeamController
 
         if (strlen($code) !== 6) {
             Session::flash('_errors', ['join_code' => ['Voer een 6-cijferige code in.']]);
-            redirect('/teams');
+            redirect('/teams/join');
         }
 
         $team = Team::findByCode($code);
         if (!$team) {
             Session::flash('_errors', ['join_code' => ['Geen team gevonden met deze code.']]);
-            redirect('/teams');
+            redirect('/teams/join');
         }
 
         $userId = (int) Auth::id();

@@ -1,6 +1,7 @@
 <?php \GamesPool\Core\View::extend('layouts/app'); ?>
 <?php
 /** @var array $games */
+/** @var ?array $lockedGame */
 /** @var array $users */
 /** @var array $errors */
 $title = 'Nieuwe match';
@@ -17,13 +18,21 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
 
         <div>
             <label class="block text-sm font-medium text-navy mb-1.5" for="game_id">Spel</label>
-            <select id="game_id" name="game_id" required class="<?= $inputCls ?>">
-                <?php foreach ($games as $g): ?>
-                    <option value="<?= e((string) $g['id']) ?>" <?= (int) old('game_id') === (int) $g['id'] ? 'selected' : '' ?>>
-                        <?= e($g['name']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <?php if ($lockedGame): ?>
+                <input type="hidden" name="game_id" value="<?= e((string) $lockedGame['id']) ?>">
+                <div class="flex items-center justify-between rounded-lg bg-brand-light border border-brand/30 px-3 py-2.5 text-navy">
+                    <span class="font-semibold"><?= e($lockedGame['name']) ?></span>
+                    <span class="text-[10px] uppercase tracking-wide font-semibold text-brand-dark">vast</span>
+                </div>
+            <?php else: ?>
+                <select id="game_id" name="game_id" required class="<?= $inputCls ?>">
+                    <?php foreach ($games as $g): ?>
+                        <option value="<?= e((string) $g['id']) ?>" <?= (int) old('game_id') === (int) $g['id'] ? 'selected' : '' ?>>
+                            <?= e($g['name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            <?php endif; ?>
             <?php foreach (($errors['game_id'] ?? []) as $err): ?>
                 <p class="text-red-600 text-sm mt-1"><?= e($err) ?></p>
             <?php endforeach; ?>
@@ -43,7 +52,7 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
             <button type="button" onclick="addRow()" class="mt-2 px-3 py-2 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm">
                 + Deelnemer toevoegen
             </button>
-            <p id="dupErr" class="hidden text-red-600 text-sm mt-2">Dezelfde speler of gastnaam staat dubbel in de lijst.</p>
+            <p id="dupErr" class="hidden text-red-600 text-sm mt-2">Dezelfde speler staat dubbel in de lijst.</p>
             <?php foreach (($errors['participants'] ?? []) as $err): ?>
                 <p class="text-red-600 text-sm mt-1"><?= e($err) ?></p>
             <?php endforeach; ?>
@@ -60,15 +69,13 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
 
 <template id="rowTpl">
     <div class="flex items-center gap-2 part-row">
-        <select name="participants[user_id][]"
+        <select name="participants[user_id][]" required
                 class="part-user flex-1 rounded-lg bg-white border border-slate-300 px-3 py-2.5">
-            <option value="">— gast (naam invullen) —</option>
+            <option value="">— kies speler —</option>
             <?php foreach ($users as $u): ?>
                 <option value="<?= e((string) $u['id']) ?>"><?= e($u['display_name']) ?></option>
             <?php endforeach; ?>
         </select>
-        <input type="text" name="participants[guest_name][]" placeholder="Gastnaam" maxlength="80"
-               class="part-guest w-32 sm:w-40 rounded-lg bg-white border border-slate-300 px-3 py-2.5">
         <button type="button" onclick="removeRow(this)"
                 class="px-3 py-2 rounded-md bg-slate-100 hover:bg-red-50 hover:text-red-700 text-slate-500" aria-label="Verwijder">×</button>
     </div>
@@ -91,9 +98,7 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
     }
     function wireRow(row) {
         row.querySelector('.part-user').addEventListener('change', refreshUserOptions);
-        row.querySelector('.part-guest').addEventListener('input', () => $err.classList.add('hidden'));
     }
-    // Disable already-selected user options in the other rows
     function refreshUserOptions() {
         const selects = [...document.querySelectorAll('.part-user')];
         const taken = new Set(selects.map(s => s.value).filter(Boolean));
@@ -107,10 +112,8 @@ $inputCls = 'w-full rounded-lg bg-white border border-slate-300 px-3 py-2.5 text
         $err.classList.add('hidden');
     }
     function checkDuplicates() {
-        const users  = [...document.querySelectorAll('.part-user')].map(s => s.value).filter(Boolean);
-        const guests = [...document.querySelectorAll('.part-guest')].map(i => i.value.trim().toLowerCase()).filter(Boolean);
-        const dup = (arr) => new Set(arr).size !== arr.length;
-        return dup(users) || dup(guests);
+        const users = [...document.querySelectorAll('.part-user')].map(s => s.value).filter(Boolean);
+        return new Set(users).size !== users.length;
     }
     $form.addEventListener('submit', (ev) => {
         if (checkDuplicates()) {

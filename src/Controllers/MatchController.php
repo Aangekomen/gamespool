@@ -28,10 +28,19 @@ class MatchController
             Session::flash('_flash.error', 'Voeg eerst een spel toe.');
             redirect('/games/new');
         }
+
+        $lockedGame = null;
+        $rawGameId = $_GET['game_id'] ?? null;
+        if ($rawGameId !== null) {
+            $candidate = Game::find((int) $rawGameId);
+            if ($candidate) $lockedGame = $candidate;
+        }
+
         return view('matches/new', [
-            'games' => $games,
-            'users' => Database::fetchAll('SELECT id, display_name FROM users ORDER BY display_name'),
-            'errors'=> Session::pull('_errors', []),
+            'games'      => $games,
+            'lockedGame' => $lockedGame,
+            'users'      => Database::fetchAll('SELECT id, display_name FROM users ORDER BY display_name'),
+            'errors'     => Session::pull('_errors', []),
         ]);
     }
 
@@ -46,62 +55,37 @@ class MatchController
             redirect('/matches/new');
         }
 
-        // Parallel arrays: participants[user_id][], participants[guest_name][]
-        $userIds    = (array) ($_POST['participants']['user_id']    ?? []);
-        $guestNames = (array) ($_POST['participants']['guest_name'] ?? []);
+        // Only user_ids; guest play is removed
+        $userIds = (array) ($_POST['participants']['user_id'] ?? []);
 
         $participants = [];
-        $seenUsers  = [];
-        $seenGuests = [];
+        $seen   = [];
         $errors = [];
 
-        $rows = max(count($userIds), count($guestNames));
-        for ($i = 0; $i < $rows; $i++) {
-            $u = $userIds[$i]    ?? '';
-            $g = trim((string) ($guestNames[$i] ?? ''));
-
-            // Empty row → skip
-            if ($u === '' && $g === '') continue;
-
-            // Can't have both user_id AND guest_name on the same row
-            if ($u !== '' && $g !== '') {
-                $errors['participants'][] = 'Vul per rij óf een speler óf een gastnaam in, niet allebei.';
+        foreach ($userIds as $u) {
+            $uid = (int) $u;
+            if ($uid <= 0) continue;
+            if (isset($seen[$uid])) {
+                $errors['participants'][] = 'Een speler kan niet twee keer meedoen.';
                 continue;
             }
-
-            if ($u !== '') {
-                $uid = (int) $u;
-                if (isset($seenUsers[$uid])) {
-                    $errors['participants'][] = 'Een speler kan niet twee keer meedoen.';
-                    continue;
-                }
-                $seenUsers[$uid] = true;
-                $participants[] = ['user_id' => $uid, 'guest_name' => null];
-            } else {
-                $key = mb_strtolower($g);
-                if (isset($seenGuests[$key])) {
-                    $errors['participants'][] = 'Dezelfde gastnaam komt twee keer voor.';
-                    continue;
-                }
-                $seenGuests[$key] = true;
-                $participants[] = ['user_id' => null, 'guest_name' => $g];
-            }
+            $seen[$uid] = true;
+            $participants[] = ['user_id' => $uid];
         }
 
         if (count($participants) < 2) {
-            $errors['participants'][] = 'Minimaal 2 unieke deelnemers.';
+            $errors['participants'][] = 'Minimaal 2 deelnemers.';
         }
-        // Elo only supports 1v1 cleanly
         if ($game['score_type'] === 'elo' && count($participants) !== 2) {
             $errors['participants'][] = 'Elo-spellen ondersteunen alleen 1-tegen-1.';
         }
 
         if (!empty($errors)) {
-            // Dedupe error messages
             $errors['participants'] = array_values(array_unique($errors['participants']));
             Session::flash('_errors', $errors);
             Session::flash('_old', ['game_id' => $gameId, 'label' => $label]);
-            redirect('/matches/new');
+            $back = '/matches/new' . ($gameId ? '?game_id=' . $gameId : '');
+            redirect($back);
         }
 
         $matchId = GameMatch::create($gameId, (int) Auth::id(), $participants, $label);

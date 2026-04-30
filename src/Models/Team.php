@@ -82,6 +82,19 @@ class Team
         );
     }
 
+    public static function membersWithRoles(int $teamId): array
+    {
+        return Database::fetchAll(
+            "SELECT u.id, u.display_name, u.first_name, u.last_name, u.email, u.avatar_path,
+                    tm.role, tm.status, tm.joined_at
+               FROM team_members tm
+               JOIN users u ON u.id = tm.user_id
+              WHERE tm.team_id = ? AND tm.status = 'approved'
+              ORDER BY (tm.role = 'captain') DESC, u.display_name ASC",
+            [$teamId]
+        );
+    }
+
     public static function isCaptain(int $teamId, int $userId): bool
     {
         return (bool) Database::fetch(
